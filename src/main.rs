@@ -1,19 +1,18 @@
 extern crate reqwest;
 
 mod downloader;
+mod parser;
 
-use structopt::StructOpt;
 use reqwest::Url;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-struct Opt
-{
+struct Opt {
     #[structopt(name = "url", required = true, parse(try_from_str))]
     origin: Url,
 }
 
 fn main() {
     let opt = Opt::from_args();
-    println!("{}", downloader::download_url(opt.origin).unwrap());
+    let page = downloader::download_url(opt.origin).unwrap();
 }
-
