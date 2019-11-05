@@ -14,8 +14,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_find_href_url() {
-        let vec = find_urls("href= \"https://lol.com\"\nsrc  = \"ulr2\"".to_string());
+    fn test_find_urls() {
+        let vec = find_urls("href= \"https://lol.com\"\nsrc  = \"url2\"".to_string());
         assert_eq!(vec, ["https://lol.com", "url2"]);
     }
 }
