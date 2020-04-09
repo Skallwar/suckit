@@ -5,8 +5,11 @@ static DEFAULT_CAPACITY: usize = 128;
 
 /// Producer and Consumer data structure. Handles the incoming requests and
 /// adds more as new URLs are found
-struct Scraper {
+pub struct Scraper {
+    #[cfg(not(test))]
     queue: VecDeque<Url>,
+    #[cfg(test)]
+    pub queue: VecDeque<Url>,
 }
 
 impl Scraper {
@@ -42,6 +45,8 @@ mod tests {
         let mut s = Scraper::new();
 
         s.push(Url::parse("https://example.com").unwrap());
+
+        assert_eq!(s.queue.len(), 1);
     }
 
     #[test]
