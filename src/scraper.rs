@@ -44,7 +44,7 @@ mod tests {
     fn push_one() {
         let mut s = Scraper::new();
 
-        s.push(Url::parse("https://example.com").unwrap());
+        s.push(Url::parse("https://example.com/").unwrap());
 
         assert_eq!(s.queue.len(), 1);
     }
@@ -53,11 +53,11 @@ mod tests {
     fn pop_one() {
         let mut s = Scraper::new();
 
-        s.push(Url::parse("https://example.com").unwrap());
+        s.push(Url::parse("https://example.com/").unwrap());
 
         match s.pop() {
             None => assert!(false),
-            Some(url) => assert_eq!(url.to_string(), "https://example.com"),
+            Some(url) => assert_eq!(url.to_string(), "https://example.com/"),
         };
     }
 
@@ -75,23 +75,23 @@ mod tests {
     fn order() {
         let mut s = Scraper::new();
 
-        s.push(Url::parse("http://0.com").unwrap());
-        s.push(Url::parse("http://1.com").unwrap());
-        s.push(Url::parse("http://2.com").unwrap());
+        s.push(Url::parse("http://0.com/").unwrap());
+        s.push(Url::parse("http://1.com/").unwrap());
+        s.push(Url::parse("http://2.com/").unwrap());
 
         match s.pop() {
             None => assert!(false),
-            Some(url) => assert_eq!(url.to_string(), "http://0.com"),
+            Some(url) => assert_eq!(url.to_string(), "http://0.com/"),
         }
 
         match s.pop() {
             None => assert!(false),
-            Some(url) => assert_eq!(url.to_string(), "http://1.com"),
+            Some(url) => assert_eq!(url.to_string(), "http://1.com/"),
         }
 
         match s.pop() {
             None => assert!(false),
-            Some(url) => assert_eq!(url.to_string(), "http://2.com"),
+            Some(url) => assert_eq!(url.to_string(), "http://2.com/"),
         }
     }
 }
