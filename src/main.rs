@@ -1,3 +1,4 @@
+mod dom;
 mod downloader;
 mod parser;
 
@@ -14,6 +15,4 @@ fn main() {
     let opt = Opt::from_args();
     let page = downloader::download_url(opt.origin).unwrap();
     let urls = parser::find_urls(page);
-
-    println!("{:?}", urls);
 }
