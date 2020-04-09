@@ -1,2 +1,6 @@
+# Cargo directories
 /target
 **/*.rs.bk
+
+# Ignore tags
+tags
