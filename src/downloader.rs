@@ -10,7 +10,7 @@ pub fn download_url(url: Url) -> Result<String, reqwest::Error> {
 mod tests {
     use super::*;
 
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_download_url() {
