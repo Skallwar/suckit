@@ -2,6 +2,8 @@ mod downloader;
 mod parser;
 mod scraper;
 
+use scraper::Scraper;
+
 use reqwest::Url;
 use structopt::StructOpt;
 
@@ -13,8 +15,9 @@ struct Opt {
 
 fn main() {
     let opt = Opt::from_args();
-    let page = downloader::download_url(opt.origin).unwrap();
-    let urls = parser::find_urls(page);
 
-    println!("{:?}", urls);
+    let mut scraper = Scraper::new();
+
+    scraper.push(opt.origin);
+    scraper.run();
 }

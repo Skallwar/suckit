@@ -1,5 +1,9 @@
 use reqwest::Url;
+
 use std::collections::VecDeque;
+
+use super::downloader;
+use super::parser;
 
 static DEFAULT_CAPACITY: usize = 128;
 
@@ -33,7 +37,21 @@ impl Scraper {
     }
 
     /// Run through the queue and complete it
-    pub fn run() {}
+    pub fn run(&mut self) {
+        // TODO: Add multithreading handling
+        while !self.queue.is_empty() {
+            match self.pop() {
+                None => panic!("unhandled data race, entered the loop with emtpy queue"),
+                Some(url) => {
+                    let page = downloader::download_url(url.clone()).unwrap();
+                    let new_urls = parser::find_urls(page);
+
+                    // FIXME: Add proper error handling
+                    new_urls.into_iter().for_each(|x| self.push(url.join(&x).unwrap()));
+                }
+            };
+        }
+    }
 }
 
 #[cfg(test)]
