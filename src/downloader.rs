@@ -25,8 +25,9 @@ mod tests {
     fn test_url_content() {
         let url: Url = Url::parse("https://example.com").unwrap();
         match download_url(url) {
-            Err(e) => assert!(false, "Fail to download lwn.net: {:?}", e),
-            Ok(content) => assert_eq!(content, "<!doctype html>
+            Err(e) => assert!(false, "Fail to download example.com: {:?}", e),
+            Ok(content) => assert_eq!(content,
+"<!doctype html>
 <html>
 <head>
     <title>Example Domain</title>
