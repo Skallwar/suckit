@@ -17,28 +17,24 @@ impl Dom {
     pub fn find_urls_string(&self) -> Vec<String> {
         let mut vec: Vec<String> = Vec::new();
 
-        vec.append(&mut self.find_src_values());
-
-        return vec;
-    }
-
-    fn find_src_values(&self) -> Vec<String> {
-        let mut vec: Vec<String> = Vec::new();
-
-        let nodes = match self.tree.select("[src]") {
+        let nodes = match self.tree.select("[src],[href]") {
             Ok(nodes) => nodes,
             Err(_) => return vec,
         };
 
         for node in nodes {
-            let element_data = match node.as_node().as_element() {
-                Some(data) => data,
+            let attributes = match node.as_node().as_element() {
+                Some(data) => data.attributes.borrow(),
                 None => continue,
             };
 
-            let url: String = match element_data.attributes.borrow().get("src") {
+            //TODO: Prettify this, we may need more than src and href in the futur
+            let url: String = match attributes.get("src") {
                 Some(url) => String::from(url),
-                None => continue,
+                None => match attributes.get("href") {
+                    Some(url) => String::from(url),
+                    None => continue,
+                },
             };
 
             vec.push(url.clone());
