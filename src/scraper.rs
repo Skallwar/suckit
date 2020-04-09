@@ -46,7 +46,9 @@ impl Scraper {
                     let page = downloader::download_url(url.clone()).unwrap();
                     let new_urls = parser::find_urls(page);
 
-                    // FIXME: Add proper error handling
+                    // FIXME: Add proper error handling ? suckit should probably
+                    // stop and display something meaningful if the new base
+                    // cannot be appended to the old one
                     new_urls.into_iter().for_each(|x| self.push(url.join(&x).unwrap()));
                 }
             };
