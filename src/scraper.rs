@@ -18,10 +18,12 @@ pub struct Scraper {
 
 impl Scraper {
     /// Creates a new scraper with no tasks
-    pub fn new() -> Scraper {
-        let new_scraper = Scraper {
+    pub fn new(url: Url) -> Scraper {
+        let mut new_scraper = Scraper {
             queue: VecDeque::with_capacity(DEFAULT_CAPACITY),
         };
+
+        new_scraper.push(url);
 
         new_scraper
     }

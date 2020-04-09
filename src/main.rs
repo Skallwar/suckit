@@ -16,8 +16,7 @@ struct Opt {
 fn main() {
     let opt = Opt::from_args();
 
-    let mut scraper = Scraper::new();
+    let mut scraper = Scraper::new(opt.origin);
 
-    scraper.push(opt.origin);
     scraper.run();
 }
