@@ -1,0 +1,24 @@
+name: SuckIT Unit Tests CI
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build SuckIT
+      run: |
+          cargo build
+
+    - name: Run unit tests
+      run: |
+          cargo test
