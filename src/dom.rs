@@ -14,7 +14,7 @@ impl Dom {
         }
     }
 
-    pub fn find_urls_string(&self) -> Vec<String> {
+    pub fn find_urls_as_strings(&self) -> Vec<String> {
         let mut vec: Vec<String> = Vec::new();
 
         let nodes = match self.tree.select("[src],[href]") {
