@@ -1,6 +1,7 @@
 use regex::Regex;
 use reqwest::Url;
 
+// FIXME: Return only URLs in same domain to avoid infinite loop in Scraper::run()
 pub fn find_urls(str: String) -> Vec<String> {
     let regex = Regex::new(r#"(href|src) *= *"([^ "]*)""#).unwrap();
     regex
