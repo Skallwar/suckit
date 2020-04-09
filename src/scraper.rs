@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn push_one() {
-        let mut s = Scraper::new(Url::parse("https://example.com/").unwrap());
+        let s = Scraper::new(Url::parse("https://example.com/").unwrap());
 
         assert_eq!(s.queue.len(), 1);
     }
@@ -70,9 +70,11 @@ mod tests {
     fn pop_empty() {
         let mut s = Scraper::new(Url::parse("https://example.com/").unwrap());
 
+        s.queue.pop_front();
+
         match s.queue.pop_front() {
             None => assert!(true),
-            Some(invalid) => assert!(false),
+            Some(_) => assert!(false),
         };
     }
 
