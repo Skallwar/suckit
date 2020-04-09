@@ -49,7 +49,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn new_dom_tree() {
+    fn new() {
         let dom = Dom::new("<html></html>");
     }
 
