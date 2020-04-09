@@ -1,5 +1,6 @@
 mod downloader;
 mod parser;
+mod scraper;
 
 use reqwest::Url;
 use structopt::StructOpt;
