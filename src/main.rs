@@ -1,3 +1,4 @@
+mod dom;
 mod downloader;
 mod parser;
 mod scraper;

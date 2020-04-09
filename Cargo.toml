@@ -8,6 +8,6 @@ edition = "2018"
 
 [dependencies]
 structopt = "0.3"
-reqwest = "0.9.22"
-regex = "1"
-pretty_assertions = "0.6.1"
+reqwest = "0.9"
+pretty_assertions = "0.6"
+kuchiki = "0.8"
