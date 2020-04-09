@@ -1,12 +1,11 @@
 use crate::dom::Dom;
-use regex::Regex;
 use reqwest::Url;
 
 // FIXME: Return only URLs in same domain to avoid infinite loop in Scraper::run()
 pub fn find_urls(str: String) -> Vec<String> {
     let dom = Dom::new(str.as_str());
 
-    return dom.find_urls_string();
+    return dom.find_urls_as_strings();
 }
 
 #[cfg(test)]

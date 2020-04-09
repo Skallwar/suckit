@@ -59,7 +59,7 @@ mod tests {
         let url2 = "test";
         let dom = Dom::new("<img src=https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Anser_anser_1_%28Piotr_Kuczynski%29.jpg/800px-Anser_anser_1_%28Piotr_Kuczynski%29.jpg>
             <img src=test>");
-        let vec = dom.find_urls_string();
+        let vec = dom.find_urls_as_strings();
 
         assert_eq!(vec[0], url1);
         assert_eq!(vec[1], url2);
