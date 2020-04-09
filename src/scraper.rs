@@ -50,7 +50,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_new() {
+    fn new() {
         let mut s = Scraper::new(Url::parse("https://example.com/").unwrap());
 
         assert_eq!(s.queue.len(), 1);
