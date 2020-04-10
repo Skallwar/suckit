@@ -2,6 +2,7 @@ use reqwest::Url;
 
 use std::collections::VecDeque;
 
+use super::disk;
 use super::downloader;
 use super::parser;
 
@@ -33,12 +34,16 @@ impl Scraper {
                 None => panic!("unhandled data race, entered the loop with emtpy queue"),
                 Some(url) => {
                     let page = downloader::download_url(url.clone()).unwrap();
-                    let new_urls = parser::find_urls(page);
+                    let new_urls = parser::find_urls(&page);
 
                     // FIXME: Add proper error handling ? suckit should probably
                     // stop and display something meaningful if the new base
                     // cannot be appended to the old one
-                    new_urls.into_iter().for_each(|x| self.queue.push_back(url.join(&x).unwrap()));
+                    new_urls
+                        .into_iter()
+                        .for_each(|x| self.queue.push_back(url.join(&x).unwrap()));
+
+                    disk::save_to_disk(url, page);
                 }
             };
         }
@@ -54,6 +59,9 @@ mod tests {
         let mut s = Scraper::new(Url::parse("https://example.com/").unwrap());
 
         assert_eq!(s.queue.len(), 1);
-        assert_eq!(s.queue.pop_front().unwrap().to_string(), "https://example.com/");
+        assert_eq!(
+            s.queue.pop_front().unwrap().to_string(),
+            "https://example.com/"
+        );
     }
 }
