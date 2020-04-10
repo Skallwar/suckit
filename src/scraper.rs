@@ -88,26 +88,6 @@ impl Scraper {
 }
 
 #[cfg(test)]
-mod downloader {
-    static SIMPLE_BODY: &str = "<!DOCTYPE html>
-<html>
-    <body>
-        <p>Absolute <a href=\"https://no-no-no.com\"></a></p>
-        <p>Relative <a href=\"a_file\"></a></p>
-        <p>Relative nested <a href=\"dir/nested/file\"></a></p>
-    </body>
-</html>
-";
-
-    pub fn download_url(url: reqwest::Url) -> Result<String, reqwest::Error> {
-        match url.as_str() == "https://fake_start.net/" {
-            true => Ok(String::from(SIMPLE_BODY)),
-            false => Ok(String::from("")),
-        }
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -134,5 +114,25 @@ mod tests {
         assert!(s
             .visited_urls
             .contains("https://fake_start.net/dir/nested/file"));
+    }
+}
+
+#[cfg(test)]
+mod downloader {
+    static SIMPLE_BODY: &str = "<!DOCTYPE html>
+<html>
+    <body>
+        <p>Absolute <a href=\"https://no-no-no.com\"></a></p>
+        <p>Relative <a href=\"a_file\"></a></p>
+        <p>Relative nested <a href=\"dir/nested/file\"></a></p>
+    </body>
+</html>
+";
+
+    pub fn download_url(url: reqwest::Url) -> Result<String, reqwest::Error> {
+        match url.as_str() == "https://fake_start.net/" {
+            true => Ok(String::from(SIMPLE_BODY)),
+            false => Ok(String::from("")),
+        }
     }
 }
