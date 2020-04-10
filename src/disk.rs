@@ -1,18 +1,32 @@
-use reqwest::Url;
-use std::fs::File;
+use std::fs;
 use std::io::Write;
+use std::path::PathBuf;
+
+use reqwest::Url;
 
 //TODO: Recover insted of panic
-pub fn save_to_disk(url: &Url, content: &String) {
-    let path = url_to_path(url);
+pub fn save_to_disk(url: &Url, content: &String, path: &Option<PathBuf>) {
+    let path_url = url_to_path(url);
+    let path = match path {
+        Some(path) => path.join(path_url),
+        None => PathBuf::new().join(path_url),
+    };
 
-    let mut file = match File::create(&path) {
-        Err(err) => panic!("Couldn't create {}: {}", path, err),
+    match path.parent() {
+        Some(parent) => match fs::create_dir_all(parent) {
+            Err(err) => panic!("Couldn't create folder {}: {}", parent.display(), err),
+            Ok(()) => (),
+        },
+        None => (),
+    }
+
+    let mut file = match fs::File::create(&path) {
+        Err(err) => panic!("Couldn't create {}: {}", path.display(), err),
         Ok(file) => file,
     };
 
     match file.write_all(content.as_bytes()) {
-        Err(err) => panic!("Couldn't write to {}: {}", path, err),
+        Err(err) => panic!("Couldn't write to {}: {}", path.display(), err),
         Ok(_) => (),
     };
 }
