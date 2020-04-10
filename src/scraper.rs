@@ -3,9 +3,10 @@ use reqwest::Url;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 
-#[cfg(not(test))]
+#[cfg(not(test))] //For the "mock" at the end of file
 use super::downloader;
 
+use super::args;
 use super::disk;
 use super::parser;
 
@@ -14,21 +15,23 @@ static DEFAULT_CAPACITY: usize = 128;
 /// Producer and Consumer data structure. Handles the incoming requests and
 /// adds more as new URLs are found
 pub struct Scraper {
+    args: args::Args,
     queue: VecDeque<Url>,
     visited_urls: HashSet<String>,
 }
 
 impl Scraper {
-    /// Create a new scraper with an entry point
-    pub fn new(url: Url) -> Scraper {
-        let mut new_scraper = Scraper {
+    /// Create a new scraper with command line options
+    pub fn new(args: args::Args) -> Scraper {
+        let mut scraper = Scraper {
+            args: args,
             queue: VecDeque::with_capacity(DEFAULT_CAPACITY),
             visited_urls: HashSet::new(),
         };
 
-        new_scraper.push(url);
+        scraper.push(scraper.args.origin.clone());
 
-        new_scraper
+        scraper
     }
 
     /* Use wrappers functions for consistency */
@@ -77,10 +80,9 @@ impl Scraper {
                         .filter(|candidate| Scraper::should_visit(candidate, &url))
                         .for_each(|x| self.push(url.join(&x).unwrap()));
 
-                    disk::save_to_disk(&url, &page);
+                    disk::save_file(&url, &page, &self.args.output);
 
                     println!("{} has been downloaded", url);
-
                 }
             };
         }
@@ -90,10 +92,15 @@ impl Scraper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
 
     #[test]
     fn new() {
-        let mut s = Scraper::new(Url::parse("https://example.com/").unwrap());
+        let args = args::Args {
+            origin: Url::parse("https://example.com/").unwrap(),
+            output: Some(PathBuf::from("/tmp")),
+        };
+        let mut s = Scraper::new(args);
 
         assert_eq!(s.queue.len(), 1);
         assert_eq!(
@@ -104,7 +111,11 @@ mod tests {
 
     #[test]
     fn run() {
-        let mut s = Scraper::new(Url::parse("https://fake_start.net").unwrap());
+        let args = args::Args {
+            origin: Url::parse("https://fake_start.net/").unwrap(),
+            output: Some(PathBuf::from("/tmp")),
+        };
+        let mut s = Scraper::new(args);
 
         s.run();
 

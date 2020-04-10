@@ -1,3 +1,4 @@
+mod args;
 mod disk;
 mod dom;
 mod downloader;
@@ -6,19 +7,10 @@ mod scraper;
 
 use scraper::Scraper;
 
-use reqwest::Url;
-use structopt::StructOpt;
-
-#[derive(Debug, StructOpt)]
-struct Opt {
-    #[structopt(name = "url", required = true, parse(try_from_str))]
-    origin: Url,
-}
-
 fn main() {
-    let opt = Opt::from_args();
+    let args = args::Args::collect();
 
-    let mut scraper = Scraper::new(opt.origin);
+    let mut scraper = Scraper::new(args);
 
     scraper.run();
 }
