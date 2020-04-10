@@ -1,10 +1,9 @@
 use reqwest::Url;
-use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 
 //TODO: Recover insted of panic
-pub fn save_to_disk(url: Url, content: String) {
+pub fn save_to_disk(url: &Url, content: &String) {
     let path = url_to_path(url);
 
     let mut file = match File::create(&path) {
@@ -13,20 +12,20 @@ pub fn save_to_disk(url: Url, content: String) {
     };
 
     match file.write_all(content.as_bytes()) {
-        Err(err) => panic!("Couldn't write to {}", path),
+        Err(err) => panic!("Couldn't write to {}: {}", path, err),
         Ok(_) => (),
     };
 }
 
-fn url_to_path(url: Url) -> String {
+fn url_to_path(url: &Url) -> String {
     let scheme_size = url.scheme().len() + 3; // 3 = "://".len()
-    let mut url = url.into_string();
+    let url = url.as_str();
 
+    let mut url = url.replace('/', "_").replace('.', "_");
     url.replace_range(0..scheme_size, ""); //Strip scheme
-    let url = url.replace('/', "_").replace('.', "_");
-    let url = url.trim_end_matches('_').to_string(); //Remaining '/'
+    let url = url.trim_end_matches('_'); //Remaining '/'
 
-    return url;
+    return url.to_string();
 }
 
 #[cfg(test)]
@@ -35,7 +34,7 @@ mod tests {
 
     #[test]
     fn url_to_path() {
-        let str = super::url_to_path(Url::parse("https://lwn.net/Kernel/").unwrap());
+        let str = super::url_to_path(&Url::parse("https://lwn.net/Kernel/").unwrap());
 
         assert_eq!(str, "lwn_net_Kernel");
     }

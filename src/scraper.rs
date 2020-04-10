@@ -43,7 +43,9 @@ impl Scraper {
                         .into_iter()
                         .for_each(|x| self.queue.push_back(url.join(&x).unwrap()));
 
-                    disk::save_to_disk(url, page);
+                    disk::save_to_disk(&url, &page);
+
+                    println!("{} has been downloaded", url);
                 }
             };
         }
