@@ -29,13 +29,14 @@ impl Scraper {
         match Url::parse(url) {
             /* The given candidate is a valid URL, and not a relative path to
              * the next one. Therefore, we have to check if this URL belongs
-             * to the same domain as our current URL */
+             * to the same domain as our current URL. If the candidate has the
+             * same domain as our base, then we should visit it */
             Ok(not_ok) => not_ok.domain() == base.domain(),
 
             /* Since we couldn't parse this "URL", then it must be a relative
              * path or a malformed URL. If the URL is malformed, then it will
              * be handled during the join() call in run() */
-            Err(_) => true
+            Err(_) => true,
         }
     }
 
@@ -63,6 +64,18 @@ impl Scraper {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    static SIMPLE_BODY: &str = 
+"<!DOCTYPE html>
+<html>
+    <body>
+        <p>Absolute <a href=\"https://no-no-no.com\"></a></p>
+        <p>Relative <a href=\"a_file\"></a></p>
+        <p>Relative backwards <a href=\"../a_file\"></a></p>
+        <p>Relative nested <a href=\"dir/nested/file\"></a></p>
+    </body>
+</html>
+";
 
     #[test]
     fn new() {
