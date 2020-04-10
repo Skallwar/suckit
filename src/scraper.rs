@@ -1,7 +1,9 @@
 use reqwest::Url;
 
 use std::collections::VecDeque;
+use std::collections::HashSet;
 
+#[cfg(not(test))]
 use super::downloader;
 use super::parser;
 
@@ -11,18 +13,36 @@ static DEFAULT_CAPACITY: usize = 128;
 /// adds more as new URLs are found
 pub struct Scraper {
     queue: VecDeque<Url>,
+    visited_urls: HashSet<String>,
 }
 
 impl Scraper {
-    /// Creates a new scraper with no tasks
+    /// Create a new scraper with an entry point
     pub fn new(url: Url) -> Scraper {
         let mut new_scraper = Scraper {
             queue: VecDeque::with_capacity(DEFAULT_CAPACITY),
+            visited_urls: HashSet::new(),
         };
 
-        new_scraper.queue.push_front(url);
+        new_scraper.push(url);
 
         new_scraper
+    }
+
+    /* Use wrappers functions for consistency */
+
+    fn push(&mut self, url: Url) {
+        match self.visited_urls.contains(url.as_str()) {
+            false => {
+                self.visited_urls.insert(url.to_string());
+                self.queue.push_back(url);
+            },
+            true => {}
+        }
+    }
+
+    fn pop(&mut self) -> Option<Url> {
+        self.queue.pop_front()
     }
 
     fn should_visit(url: &str, base: &Url) -> bool {
@@ -44,17 +64,17 @@ impl Scraper {
     pub fn run(&mut self) {
         // TODO: Add multithreading handling
         while !self.queue.is_empty() {
-            match self.queue.pop_front() {
-                None => panic!("unhandled data race, entered the loop with emtpy queue"),
+            match self.pop() {
+                None => panic!("unhandled data race, entered the loop with empty queue"),
                 Some(url) => {
-                    dbg!(url.as_str());
+                    dbg!(url.clone());
                     let page = downloader::download_url(url.clone()).unwrap();
                     let new_urls = parser::find_urls(page);
 
                     new_urls
                         .into_iter()
                         .filter(|candidate| Scraper::should_visit(candidate, &url))
-                        .for_each(|x| self.queue.push_back(url.join(&x).unwrap()));
+                        .for_each(|x| self.push(url.join(&x).unwrap()));
                 }
             };
         }
@@ -62,20 +82,29 @@ impl Scraper {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    static SIMPLE_BODY: &str = 
+mod downloader {
+    static SIMPLE_BODY: &str =
 "<!DOCTYPE html>
 <html>
     <body>
         <p>Absolute <a href=\"https://no-no-no.com\"></a></p>
         <p>Relative <a href=\"a_file\"></a></p>
-        <p>Relative backwards <a href=\"../a_file\"></a></p>
         <p>Relative nested <a href=\"dir/nested/file\"></a></p>
     </body>
 </html>
 ";
+
+    pub fn download_url(url: reqwest::Url) -> Result<String, reqwest::Error> {
+        match url.as_str() == "https://fake_start.net/" {
+            true => Ok(String::from(SIMPLE_BODY)),
+            false => Ok(String::from(""))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 
     #[test]
     fn new() {
@@ -86,5 +115,17 @@ mod tests {
             s.queue.pop_front().unwrap().to_string(),
             "https://example.com/"
         );
+    }
+
+    #[test]
+    fn run() {
+        let mut s = Scraper::new(Url::parse("https://fake_start.net").unwrap());
+
+        s.run();
+
+        assert!(!s.visited_urls.contains("https://example.net"));
+        assert!(!s.visited_urls.contains("https://no-no-no.com"));
+        assert!(s.visited_urls.contains("https://fake_start.net/a_file"));
+        assert!(s.visited_urls.contains("https://fake_start.net/dir/nested/file"));
     }
 }
