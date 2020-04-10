@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn new() {
-        let dom = Dom::new("<html></html>");
+        let _dom = Dom::new("<html></html>");
     }
 
     #[test]
