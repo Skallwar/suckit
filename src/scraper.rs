@@ -25,6 +25,20 @@ impl Scraper {
         new_scraper
     }
 
+    fn should_visit(url: &str, base: &Url) -> bool {
+        match Url::parse(url) {
+            /* The given candidate is a valid URL, and not a relative path to
+             * the next one. Therefore, we have to check if this URL belongs
+             * to the same domain as our current URL */
+            Ok(not_ok) => not_ok.domain() == base.domain(),
+
+            /* Since we couldn't parse this "URL", then it must be a relative
+             * path or a malformed URL. If the URL is malformed, then it will
+             * be handled during the join() call in run() */
+            Err(_) => true
+        }
+    }
+
     /// Run through the queue and complete it
     pub fn run(&mut self) {
         // TODO: Add multithreading handling
@@ -32,13 +46,14 @@ impl Scraper {
             match self.queue.pop_front() {
                 None => panic!("unhandled data race, entered the loop with emtpy queue"),
                 Some(url) => {
+                    dbg!(url.as_str());
                     let page = downloader::download_url(url.clone()).unwrap();
                     let new_urls = parser::find_urls(page);
 
-                    // FIXME: Add proper error handling ? suckit should probably
-                    // stop and display something meaningful if the new base
-                    // cannot be appended to the old one
-                    new_urls.into_iter().for_each(|x| self.queue.push_back(url.join(&x).unwrap()));
+                    new_urls
+                        .into_iter()
+                        .filter(|candidate| Scraper::should_visit(candidate, &url))
+                        .for_each(|x| self.queue.push_back(url.join(&x).unwrap()));
                 }
             };
         }
@@ -54,6 +69,9 @@ mod tests {
         let mut s = Scraper::new(Url::parse("https://example.com/").unwrap());
 
         assert_eq!(s.queue.len(), 1);
-        assert_eq!(s.queue.pop_front().unwrap().to_string(), "https://example.com/");
+        assert_eq!(
+            s.queue.pop_front().unwrap().to_string(),
+            "https://example.com/"
+        );
     }
 }
