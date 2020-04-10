@@ -5,11 +5,11 @@ use std::path::PathBuf;
 use reqwest::Url;
 
 //TODO: Recover insted of panic
-pub fn save_to_disk(url: &Url, content: &String, path: &Option<PathBuf>) {
+pub fn save_file(url: &Url, content: &String, path: &Option<PathBuf>) {
     let path_url = url_to_path(url);
     let path = match path {
         Some(path) => path.join(path_url),
-        None => PathBuf::new().join(path_url),
+        None => PathBuf::from(path_url),
     };
 
     match path.parent() {

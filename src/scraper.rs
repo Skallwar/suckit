@@ -80,7 +80,7 @@ impl Scraper {
                         .filter(|candidate| Scraper::should_visit(candidate, &url))
                         .for_each(|x| self.push(url.join(&x).unwrap()));
 
-                    disk::save_to_disk(&url, &page, &self.args.output);
+                    disk::save_file(&url, &page, &self.args.output);
 
                     println!("{} has been downloaded", url);
                 }
@@ -92,12 +92,13 @@ impl Scraper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
 
     #[test]
     fn new() {
         let args = args::Args {
             origin: Url::parse("https://example.com/").unwrap(),
-            output: None,
+            output: Some(PathBuf::from("/tmp")),
         };
         let mut s = Scraper::new(args);
 
@@ -112,7 +113,7 @@ mod tests {
     fn run() {
         let args = args::Args {
             origin: Url::parse("https://fake_start.net/").unwrap(),
-            output: None,
+            output: Some(PathBuf::from("/tmp")),
         };
         let mut s = Scraper::new(args);
 
