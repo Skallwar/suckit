@@ -5,6 +5,8 @@ use std::collections::VecDeque;
 
 #[cfg(not(test))]
 use super::downloader;
+
+use super::disk;
 use super::parser;
 
 static DEFAULT_CAPACITY: usize = 128;
@@ -69,12 +71,17 @@ impl Scraper {
                 Some(url) => {
                     dbg!(url.clone());
                     let page = downloader::download_url(url.clone()).unwrap();
-                    let new_urls = parser::find_urls(page);
+                    let new_urls = parser::find_urls(&page);
 
                     new_urls
                         .into_iter()
                         .filter(|candidate| Scraper::should_visit(candidate, &url))
                         .for_each(|x| self.push(url.join(&x).unwrap()));
+
+                    disk::save_to_disk(&url, &page);
+
+                    println!("{} has been downloaded", url);
+
                 }
             };
         }

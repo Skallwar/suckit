@@ -1,6 +1,4 @@
 use kuchiki::traits::*;
-use kuchiki::NodeData::*;
-use kuchiki::NodeRef;
 
 ///Struct containing a dom tree of a web page
 pub struct Dom {
