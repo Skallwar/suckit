@@ -69,7 +69,6 @@ impl Scraper {
             match self.pop() {
                 None => panic!("unhandled data race, entered the loop with empty queue"),
                 Some(url) => {
-                    dbg!(url.clone());
                     let page = downloader::download_url(url.clone()).unwrap();
                     let new_urls = parser::find_urls(&page);
 
