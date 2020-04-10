@@ -1,7 +1,7 @@
 use reqwest::Url;
 
-use std::collections::VecDeque;
 use std::collections::HashSet;
+use std::collections::VecDeque;
 
 #[cfg(not(test))]
 use super::downloader;
@@ -36,7 +36,7 @@ impl Scraper {
             false => {
                 self.visited_urls.insert(url.to_string());
                 self.queue.push_back(url);
-            },
+            }
             true => {}
         }
     }
@@ -83,8 +83,7 @@ impl Scraper {
 
 #[cfg(test)]
 mod downloader {
-    static SIMPLE_BODY: &str =
-"<!DOCTYPE html>
+    static SIMPLE_BODY: &str = "<!DOCTYPE html>
 <html>
     <body>
         <p>Absolute <a href=\"https://no-no-no.com\"></a></p>
@@ -97,7 +96,7 @@ mod downloader {
     pub fn download_url(url: reqwest::Url) -> Result<String, reqwest::Error> {
         match url.as_str() == "https://fake_start.net/" {
             true => Ok(String::from(SIMPLE_BODY)),
-            false => Ok(String::from(""))
+            false => Ok(String::from("")),
         }
     }
 }
@@ -126,6 +125,8 @@ mod tests {
         assert!(!s.visited_urls.contains("https://example.net"));
         assert!(!s.visited_urls.contains("https://no-no-no.com"));
         assert!(s.visited_urls.contains("https://fake_start.net/a_file"));
-        assert!(s.visited_urls.contains("https://fake_start.net/dir/nested/file"));
+        assert!(s
+            .visited_urls
+            .contains("https://fake_start.net/dir/nested/file"));
     }
 }
