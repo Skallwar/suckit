@@ -1,7 +1,7 @@
 use reqwest::Url;
 
 pub fn download_url(url: Url) -> Result<String, reqwest::Error> {
-    reqwest::get(url)?.text()
+    reqwest::blocking::get(url)?.text()
 }
 
 #[cfg(test)]
