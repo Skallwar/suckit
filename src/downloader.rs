@@ -1,7 +1,22 @@
 use reqwest::Url;
 
-pub fn download_url(url: Url) -> Result<String, reqwest::Error> {
-    reqwest::get(url)?.text()
+/// Wrapper around a reqwest client, used to get the content of web pages
+pub struct Downloader {
+    client: reqwest::Client,
+}
+
+impl Downloader {
+    /// Create a new Downloader
+    pub fn new() -> Downloader {
+        Downloader {
+            client: reqwest::Client::new(),
+        }
+    }
+
+    /// Download the content located at a given URL
+    pub fn get(&self, url: Url) -> Result<String, reqwest::Error> {
+        self.client.get(url).send()?.text()
+    }
 }
 
 #[cfg(test)]
