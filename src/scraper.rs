@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::collections::VecDeque;
 
 #[cfg(not(test))] //For the "mock" at the end of file
-use super::downloader::Downloader;
+use super::downloader;
 
 use super::args;
 use super::disk;
@@ -18,7 +18,7 @@ pub struct Scraper {
     args: args::Args,
     queue: VecDeque<Url>,
     visited_urls: HashSet<String>,
-    downloader: Downloader,
+    downloader: downloader::Downloader,
 }
 
 impl Scraper {
@@ -28,7 +28,7 @@ impl Scraper {
             args: args,
             queue: VecDeque::with_capacity(DEFAULT_CAPACITY),
             visited_urls: HashSet::new(),
-            downloader: Downloader::new(),
+            downloader: downloader::Downloader::new(),
         };
 
         scraper.push(scraper.args.origin.clone());

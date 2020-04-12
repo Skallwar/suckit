@@ -28,7 +28,7 @@ mod tests {
     #[test]
     fn test_download_url() {
         let url: Url = Url::parse("https://lwn.net").unwrap();
-        match download_url(url) {
+        match Downloader::new().get(url) {
             Err(e) => assert!(false, "Fail to download lwn.net: {:?}", e),
             _ => {}
         }
@@ -37,7 +37,7 @@ mod tests {
     #[test]
     fn test_url_content() {
         let url: Url = Url::parse("https://example.com").unwrap();
-        match download_url(url) {
+        match Downloader::new().get(url) {
             Err(e) => assert!(false, "Fail to download example.com: {:?}", e),
             Ok(content) => assert_eq!(content,
 "<!doctype html>
