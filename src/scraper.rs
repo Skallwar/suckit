@@ -18,6 +18,7 @@ pub struct Scraper {
     args: args::Args,
     queue: VecDeque<Url>,
     visited_urls: HashSet<String>,
+    downloader: downloader::Downloader,
 }
 
 impl Scraper {
@@ -27,6 +28,7 @@ impl Scraper {
             args: args,
             queue: VecDeque::with_capacity(DEFAULT_CAPACITY),
             visited_urls: HashSet::new(),
+            downloader: downloader::Downloader::new(),
         };
 
         scraper.push(scraper.args.origin.clone());
@@ -72,7 +74,7 @@ impl Scraper {
             match self.pop() {
                 None => panic!("unhandled data race, entered the loop with empty queue"),
                 Some(url) => {
-                    let page = downloader::download_url(url.clone()).unwrap();
+                    let page = self.downloader.get(url.clone()).unwrap();
                     let new_urls = parser::find_urls(&page);
 
                     new_urls
@@ -140,10 +142,18 @@ mod downloader {
 </html>
 ";
 
-    pub fn download_url(url: reqwest::Url) -> Result<String, reqwest::Error> {
-        match url.as_str() == "https://fake_start.net/" {
-            true => Ok(String::from(SIMPLE_BODY)),
-            false => Ok(String::from("")),
+    pub struct Downloader {}
+
+    impl Downloader {
+        pub fn new() -> Downloader {
+            Downloader {}
+        }
+
+        pub fn get(&self, url: reqwest::Url) -> Result<String, reqwest::Error> {
+            match url.as_str() == "https://fake_start.net/" {
+                true => Ok(String::from(SIMPLE_BODY)),
+                false => Ok(String::from("")),
+            }
         }
     }
 }
