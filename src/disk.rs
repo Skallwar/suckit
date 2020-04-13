@@ -33,7 +33,7 @@ pub fn save_file(url: &Url, content: &String, path: &Option<PathBuf>) {
     };
 }
 
-fn url_to_path(url: &Url) -> String {
+pub fn url_to_path(url: &Url) -> String {
     let scheme_size = url.scheme().len() + 3; // 3 = "://".len()
     let url = url.as_str();
 

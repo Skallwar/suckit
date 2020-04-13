@@ -2,7 +2,6 @@ mod args;
 mod disk;
 mod dom;
 mod downloader;
-mod parser;
 mod scraper;
 
 use scraper::Scraper;

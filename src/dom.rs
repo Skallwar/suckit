@@ -1,8 +1,10 @@
+use std::ops::Deref;
+
 use kuchiki::traits::*;
 
 ///Struct containing a dom tree of a web page
 pub struct Dom {
-    pub tree: kuchiki::NodeRef,
+    tree: kuchiki::NodeRef,
 }
 
 impl Dom {
@@ -12,8 +14,8 @@ impl Dom {
         }
     }
 
-    pub fn find_urls_as_strings(&self) -> Vec<String> {
-        let mut vec: Vec<String> = Vec::new();
+    pub fn find_urls_as_strings(&self) -> Vec<&mut String> {
+        let mut vec: Vec<&mut String> = Vec::new();
 
         let nodes = match self.tree.select("[src],[href]") {
             Ok(nodes) => nodes,
@@ -21,21 +23,16 @@ impl Dom {
         };
 
         for node in nodes {
-            let attributes = match node.as_node().as_element() {
-                Some(data) => data.attributes.borrow(),
-                None => continue,
-            };
+            let attributes = node.deref().attributes.as_ptr();
 
             //TODO: Prettify this, we may need more than src and href in the futur
-            let url: String = match attributes.get("src") {
-                Some(url) => String::from(url),
-                None => match attributes.get("href") {
-                    Some(url) => String::from(url),
-                    None => continue,
+            match unsafe { (*attributes).get_mut("src") } {
+                Some(url) => vec.push(url),
+                None => match unsafe { (*attributes).get_mut("href") } {
+                    Some(url) => vec.push(url),
+                    None => (),
                 },
-            };
-
-            vec.push(url.clone());
+            }
         }
 
         return vec;
