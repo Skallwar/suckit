@@ -7,4 +7,5 @@ your disk.
 
 * [ ] Vacuum the entirety of a website recursively
 * [ ] Use multithreading
-* [ ] Write the website's content to your disk
+* [x] Write the website's content to your disk
+* [ ] Offline navigation
