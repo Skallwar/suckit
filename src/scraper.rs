@@ -8,7 +8,7 @@ use super::downloader;
 
 use super::args;
 use super::disk;
-use super::parser;
+use super::dom;
 
 static DEFAULT_CAPACITY: usize = 128;
 
@@ -75,7 +75,9 @@ impl Scraper {
                 None => panic!("unhandled data race, entered the loop with empty queue"),
                 Some(url) => {
                     let page = self.downloader.get(url.clone()).unwrap();
-                    let new_urls = parser::find_urls(&page);
+                    let dom = dom::Dom::new(&page);
+
+                    let new_urls = dom.find_urls_as_strings();
 
                     new_urls
                         .into_iter()
