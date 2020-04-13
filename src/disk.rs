@@ -7,11 +7,10 @@ use reqwest::Url;
 const FILE_NAME_MAX_LENGTH: usize = 255;
 
 //TODO: Recover insted of panic
-pub fn save_file(url: &Url, content: &String, path: &Option<PathBuf>) {
-    let path_url = url_to_path(url);
+pub fn save_file(file_name: &String, content: &String, path: &Option<PathBuf>) {
     let path = match path {
-        Some(path) => path.join(path_url),
-        None => PathBuf::from(path_url),
+        Some(path) => path.join(file_name),
+        None => PathBuf::from(file_name),
     };
 
     match path.parent() {
