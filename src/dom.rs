@@ -14,6 +14,17 @@ impl Dom {
         }
     }
 
+    pub fn serialize(&self) -> String {
+        let mut vec: Vec<u8> = Vec::new();
+
+        match self.tree.serialize(&mut vec) {
+            Err(err) => panic!("Couldn't serialize domtree: {}", err),
+            Ok(_) => (),
+        }
+
+        return String::from_utf8(vec).unwrap();
+    }
+
     pub fn find_urls_as_strings(&self) -> Vec<&mut String> {
         let mut vec: Vec<&mut String> = Vec::new();
 
