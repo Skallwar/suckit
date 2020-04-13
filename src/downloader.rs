@@ -2,14 +2,14 @@ use reqwest::Url;
 
 /// Wrapper around a reqwest client, used to get the content of web pages
 pub struct Downloader {
-    client: reqwest::Client,
+    client: reqwest::blocking::Client,
 }
 
 impl Downloader {
     /// Create a new Downloader
     pub fn new() -> Downloader {
         Downloader {
-            client: reqwest::Client::new(),
+            client: reqwest::blocking::Client::new(),
         }
     }
 
