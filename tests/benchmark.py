@@ -5,6 +5,7 @@ from tabulate import tabulate
 from threading import Thread
 
 import time
+import argparse
 import sys
 import errno
 import os
@@ -14,10 +15,10 @@ import signal
 
 # Output directory for the downloaded files. Cleaned afterwards
 # Be extra careful when changing that value !
-OUTPUT_DIR = "/tmp/suckit_bench/"
+OUTPUT_DIR = "/tmp/suckit_bench"
 
 # Set the running time for both benchmarks
-RUN_TIME = int(sys.argv[1])
+RUN_TIME = 120
 
 # Keep track of the current PID to SIGINT it
 CUR_PID = 0
@@ -73,15 +74,35 @@ def flush_output(res):
     print(tabulate(res, headers = ["name", "pages downloaded"]))
 
 def main():
+    parser = argparse.ArgumentParser(description = "SuckIT benchmark")
+    parser.add_argument("-o", "--output", action = "store", type = str, help = "benchmark output directory (default_value = /tmp/suckit_bench/)")
+    parser.add_argument("-t", "--time", action = "store", type = int, help = "time given to each binary in seconds (default_value = 120)")
+
+    args = parser.parse_args()
+
+    global OUTPUT_DIR
+    global RUN_TIME
+
+    if args.output:
+        OUTPUT_DIR = args.output
+
+    if args.time:
+        RUN_TIME = args.time
+
     print_info()
 
     # Handle the case where the directory exists already
     try:
         os.mkdir(OUTPUT_DIR)
     except OSError as exc:
-        if exc.errno != errno.EEXIST:
-            raise
-        pass
+        err ="""
+            You're trying to use an already existing directory as your
+            output directory. Since the directory will be counted and
+            removed after the benchmark, I can't let you do that !
+            """
+        print(f"{colored(err, 'red')}")
+        raise
+
     os.chdir(OUTPUT_DIR)
 
     results = []
