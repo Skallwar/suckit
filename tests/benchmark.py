@@ -23,6 +23,9 @@ RUN_TIME = 120
 # Keep track of the current PID to SIGINT it
 CUR_PID = 0
 
+# Path to the suckit binary
+SUCKIT_CMD = "suckit"
+
 def print_info():
     info = """
     This benchmark aims to bench suckit against other, popular website
@@ -36,24 +39,24 @@ def print_info():
     print(f"{colored(info, 'blue')}")
     print(time_str)
 
-def bench_worker(cmd):
+def bench_worker(dir_name, cmd):
     global CUR_PID
 
     # Handle the case where the directory exists already
     try:
-        os.mkdir(cmd)
+        os.mkdir(dir_name)
     except OSError as exc:
         if exc.errno != errno.EEXIST:
             raise
         pass
 
-    os.chdir(cmd)
+    os.chdir(dir_name)
 
     CUR_PID = subprocess.Popen([cmd, "https://forum.httrack.com"],
             stdout = open("/dev/null", "w"), shell = False).pid
 
-def bench(cmd):
-    thread = Thread(target = bench_worker, args = (cmd, ))
+def bench(dir_name, cmd):
+    thread = Thread(target = bench_worker, args = (dir_name, cmd, ))
     thread.start()
 
     # Let the benched program run for a certain amount of time
@@ -75,19 +78,24 @@ def flush_output(res):
 
 def main():
     parser = argparse.ArgumentParser(description = "SuckIT benchmark")
-    parser.add_argument("-o", "--output", action = "store", type = str, help = "benchmark output directory (default_value = /tmp/suckit_bench/)")
+    parser.add_argument("-o", "--output", action = "store", type = str, help = "benchmark output directory (default_value = '/tmp/suckit_bench/')")
     parser.add_argument("-t", "--time", action = "store", type = int, help = "time given to each binary in seconds (default_value = 120)")
+    parser.add_argument("-s", "--suckit", action = "store", type = str, help = "path to the suckit binary (default_value = 'suckit')")
 
     args = parser.parse_args()
 
     global OUTPUT_DIR
     global RUN_TIME
+    global SUCKIT_CMD
 
     if args.output:
         OUTPUT_DIR = args.output
 
     if args.time:
         RUN_TIME = args.time
+
+    if args.suckit:
+        SUCKIT_CMD = os.path.abspath(args.suckit)
 
     print_info()
 
@@ -107,8 +115,8 @@ def main():
 
     results = []
 
-    results.append(["suckit", bench("suckit")])
-    results.append(["httrack", bench("httrack")])
+    results.append(["suckit", bench("suckit", SUCKIT_CMD)])
+    results.append(["httrack", bench("httrack", "httrack")])
 
     flush_output(results)
 
