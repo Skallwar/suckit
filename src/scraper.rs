@@ -115,6 +115,7 @@ mod tests {
         let args = args::Args {
             origin: Url::parse("https://example.com/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
+            tries: 1,
         };
         let mut s = Scraper::new(args);
 
@@ -130,6 +131,7 @@ mod tests {
         let args = args::Args {
             origin: Url::parse("https://fake_start.net/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
+            tries: 1,
         };
         let mut s = Scraper::new(args);
 
@@ -159,11 +161,11 @@ mod downloader {
     pub struct Downloader {}
 
     impl Downloader {
-        pub fn new() -> Downloader {
+        pub fn new(_tries: usize) -> Downloader {
             Downloader {}
         }
 
-        pub fn get(&self, url: reqwest::Url) -> Result<String, reqwest::Error> {
+        pub fn get(&self, url: &reqwest::Url) -> Result<String, reqwest::Error> {
             match url.as_str() == "https://fake_start.net/" {
                 true => Ok(String::from(SIMPLE_BODY)),
                 false => Ok(String::from("")),
