@@ -1,6 +1,6 @@
 use reqwest::Url;
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::collections::VecDeque;
 
 #[cfg(not(test))] //For the "mock" at the end of file
@@ -17,7 +17,7 @@ static DEFAULT_CAPACITY: usize = 128;
 pub struct Scraper {
     args: args::Args,
     queue: VecDeque<Url>,
-    visited_urls: HashSet<String>,
+    visited_urls: HashMap<String, String>,
     downloader: downloader::Downloader,
 }
 
@@ -27,7 +27,7 @@ impl Scraper {
         let mut scraper = Scraper {
             args: args,
             queue: VecDeque::with_capacity(DEFAULT_CAPACITY),
-            visited_urls: HashSet::new(),
+            visited_urls: HashMap::new(),
             downloader: downloader::Downloader::new(),
         };
 
@@ -39,12 +39,13 @@ impl Scraper {
     /* Use wrappers functions for consistency */
 
     fn push(&mut self, url: Url) {
-        match self.visited_urls.contains(url.as_str()) {
+        match self.visited_urls.contains_key(url.as_str()) {
             false => {
-                self.visited_urls.insert(url.to_string());
+                self.visited_urls
+                    .insert(url.to_string(), disk::url_to_path(&url));
                 self.queue.push_back(url);
             }
-            true => {}
+            true => (),
         }
     }
 
@@ -78,13 +79,24 @@ impl Scraper {
                     let dom = dom::Dom::new(&page);
 
                     let new_urls = dom.find_urls_as_strings();
-
-                    new_urls
+                    let new_urls = new_urls
                         .into_iter()
-                        .filter(|candidate| Scraper::should_visit(candidate, &url))
-                        .for_each(|x| self.push(url.join(&x).unwrap()));
+                        .filter(|candidate| Scraper::should_visit(candidate, &url));
 
-                    disk::save_file(&url, &page, &self.args.output);
+                    for new_url_string in new_urls {
+                        let new_full_url = url.join(&new_url_string).unwrap();
+
+                        self.push(new_full_url.clone());
+                        new_url_string.clear();
+                        new_url_string
+                            .push_str(self.visited_urls.get(new_full_url.as_str()).unwrap());
+                    }
+
+                    disk::save_file(
+                        self.visited_urls.get(url.as_str()).unwrap(),
+                        &dom.serialize(),
+                        &self.args.output,
+                    );
 
                     println!("{} has been downloaded", url);
                 }
@@ -123,12 +135,12 @@ mod tests {
 
         s.run();
 
-        assert!(!s.visited_urls.contains("https://example.net"));
-        assert!(!s.visited_urls.contains("https://no-no-no.com"));
-        assert!(s.visited_urls.contains("https://fake_start.net/a_file"));
+        assert!(!s.visited_urls.contains_key("https://example.net"));
+        assert!(!s.visited_urls.contains_key("https://no-no-no.com"));
+        assert!(s.visited_urls.contains_key("https://fake_start.net/a_file"));
         assert!(s
             .visited_urls
-            .contains("https://fake_start.net/dir/nested/file"));
+            .contains_key("https://fake_start.net/dir/nested/file"));
     }
 }
 

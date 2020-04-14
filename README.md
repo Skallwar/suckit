@@ -1,3 +1,5 @@
+![](https://github.com/Skallwar/suckit/workflows/SuckIT%20Unit%20Tests%20CI/badge.svg)
+
 # SuckIT
 
 `SuckIT` allows you to recursively visit and download a website's content to
@@ -7,4 +9,5 @@ your disk.
 
 * [ ] Vacuum the entirety of a website recursively
 * [ ] Use multithreading
-* [ ] Write the website's content to your disk
+* [x] Write the website's content to your disk
+* [x] Offline navigation
