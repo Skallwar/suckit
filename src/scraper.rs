@@ -25,10 +25,10 @@ impl Scraper {
     /// Create a new scraper with command line options
     pub fn new(args: args::Args) -> Scraper {
         let mut scraper = Scraper {
-            args: args,
             queue: VecDeque::with_capacity(DEFAULT_CAPACITY),
             visited_urls: HashMap::new(),
-            downloader: downloader::Downloader::new(),
+            downloader: downloader::Downloader::new(args.tries),
+            args: args,
         };
 
         scraper.push(scraper.args.origin.clone());
@@ -75,7 +75,7 @@ impl Scraper {
             match self.pop() {
                 None => panic!("unhandled data race, entered the loop with empty queue"),
                 Some(url) => {
-                    let page = self.downloader.get(url.clone()).unwrap();
+                    let page = self.downloader.get(&url).unwrap();
                     let dom = dom::Dom::new(&page);
 
                     let new_urls = dom.find_urls_as_strings();
@@ -115,6 +115,7 @@ mod tests {
         let args = args::Args {
             origin: Url::parse("https://example.com/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
+            tries: 1,
         };
         let mut s = Scraper::new(args);
 
@@ -130,6 +131,7 @@ mod tests {
         let args = args::Args {
             origin: Url::parse("https://fake_start.net/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
+            tries: 1,
         };
         let mut s = Scraper::new(args);
 
@@ -159,11 +161,11 @@ mod downloader {
     pub struct Downloader {}
 
     impl Downloader {
-        pub fn new() -> Downloader {
+        pub fn new(_tries: usize) -> Downloader {
             Downloader {}
         }
 
-        pub fn get(&self, url: reqwest::Url) -> Result<String, reqwest::Error> {
+        pub fn get(&self, url: &reqwest::Url) -> Result<String, reqwest::Error> {
             match url.as_str() == "https://fake_start.net/" {
                 true => Ok(String::from(SIMPLE_BODY)),
                 false => Ok(String::from("")),

@@ -3,19 +3,32 @@ use reqwest::Url;
 /// Wrapper around a reqwest client, used to get the content of web pages
 pub struct Downloader {
     client: reqwest::blocking::Client,
+    tries: usize,
 }
 
 impl Downloader {
     /// Create a new Downloader
-    pub fn new() -> Downloader {
+    pub fn new(tries: usize) -> Downloader {
         Downloader {
             client: reqwest::blocking::Client::new(),
+            tries: tries,
         }
     }
 
     /// Download the content located at a given URL
-    pub fn get(&self, url: Url) -> Result<String, reqwest::Error> {
-        self.client.get(url).send()?.text()
+    pub fn get(&self, url: &Url) -> Result<String, reqwest::Error> {
+        let mut error: Option<reqwest::Error> = None;
+        for _ in 0..self.tries {
+            match self.client.get(url.clone()).send() {
+                Ok(data) => return Ok(data.text().unwrap()),
+                Err(e) => {
+                    println!("Downloader.get() has encounter an error: {}", e);
+                    error = Some(e);
+                }
+            };
+        }
+
+        return Err(error.unwrap());
     }
 }
 
@@ -28,7 +41,7 @@ mod tests {
     #[test]
     fn test_download_url() {
         let url: Url = Url::parse("https://lwn.net").unwrap();
-        match Downloader::new().get(url) {
+        match Downloader::new(1).get(&url) {
             Err(e) => assert!(false, "Fail to download lwn.net: {:?}", e),
             _ => {}
         }
@@ -37,7 +50,7 @@ mod tests {
     #[test]
     fn test_url_content() {
         let url: Url = Url::parse("https://example.com").unwrap();
-        match Downloader::new().get(url) {
+        match Downloader::new(1).get(&url) {
             Err(e) => assert!(false, "Fail to download example.com: {:?}", e),
             Ok(content) => assert_eq!(content,
 "<!doctype html>
