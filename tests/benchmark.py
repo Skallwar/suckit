@@ -26,6 +26,9 @@ CUR_PID = 0
 # Path to the suckit binary
 SUCKIT_CMD = "suckit"
 
+# URL to start scraping from
+URL = "https://forum.httrack.com"
+
 def print_info():
     info = """
     This benchmark aims to bench suckit against other, popular website
@@ -52,7 +55,7 @@ def bench_worker(dir_name, cmd):
 
     os.chdir(dir_name)
 
-    CUR_PID = subprocess.Popen([cmd, "https://forum.httrack.com"],
+    CUR_PID = subprocess.Popen([cmd, URL],
             stdout = open("/dev/null", "w"), shell = False).pid
 
 def bench(dir_name, cmd):
@@ -77,16 +80,19 @@ def flush_output(res):
     print(tabulate(res, headers = ["name", "pages downloaded"]))
 
 def main():
-    parser = argparse.ArgumentParser(description = "SuckIT benchmark")
-    parser.add_argument("-o", "--output", action = "store", type = str, help = "benchmark output directory (default_value = '/tmp/suckit_bench/')")
-    parser.add_argument("-t", "--time", action = "store", type = int, help = "time given to each binary in seconds (default_value = 120)")
-    parser.add_argument("-s", "--suckit", action = "store", type = str, help = "path to the suckit binary (default_value = 'suckit')")
-
-    args = parser.parse_args()
-
     global OUTPUT_DIR
     global RUN_TIME
     global SUCKIT_CMD
+    global URL
+
+    parser = argparse.ArgumentParser(description = "SuckIT benchmark")
+
+    parser.add_argument("-o", "--output", action = "store", type = str, help = f"benchmark output directory (default_value = '{OUTPUT_DIR}')")
+    parser.add_argument("-t", "--time", action = "store", type = int, help = f"time given to each binary in seconds (default_value = RUN_TIME)")
+    parser.add_argument("-s", "--suckit", action = "store", type = str, help = f"path to the suckit binary (default_value = '{SUCKIT_CMD}')")
+    parser.add_argument("-u", "--url", action = "store", type = str, help = f"url to start scraping from (default_value = {URL})")
+
+    args = parser.parse_args()
 
     if args.output:
         OUTPUT_DIR = args.output
@@ -96,6 +102,9 @@ def main():
 
     if args.suckit:
         SUCKIT_CMD = os.path.abspath(args.suckit)
+
+    if args.url:
+        URL = os.path.abspath(args.url)
 
     print_info()
 
