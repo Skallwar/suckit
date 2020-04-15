@@ -13,6 +13,12 @@ pub struct Args {
 
     #[structopt(short, long, default_value = "1")]
     pub jobs: usize,
+
+    #[structopt(short, long, default_value = "5")]
+    pub depth: usize,
+
+    #[structopt(short, long, default_value = "20")]
+    pub tries: usize,
 }
 
 impl Args {
