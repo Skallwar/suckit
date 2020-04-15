@@ -16,9 +16,10 @@ static DEFAULT_CAPACITY: usize = 128;
 /// adds more as new URLs are found
 pub struct Scraper {
     args: args::Args,
-    queue: VecDeque<Url>,
+    queue: VecDeque<Option<Url>>,
     visited_urls: HashMap<String, String>,
     downloader: downloader::Downloader,
+    depth_level: usize,
 }
 
 impl Scraper {
@@ -29,28 +30,54 @@ impl Scraper {
             visited_urls: HashMap::new(),
             downloader: downloader::Downloader::new(args.tries),
             args: args,
+            depth_level: 0,
         };
 
-        scraper.push(scraper.args.origin.clone());
+        scraper.queue_init(scraper.args.origin.clone());
 
         scraper
     }
 
     /* Use wrappers functions for consistency */
 
+    fn push_depth_delimiter(&mut self) {
+        self.queue.push_back(None);
+    }
+
+    fn queue_init(&mut self, url: Url) {
+        //Entry point + depth delimiter
+        self.push(url);
+        self.push_depth_delimiter();
+    }
+
     fn push(&mut self, url: Url) {
         match self.visited_urls.contains_key(url.as_str()) {
             false => {
                 self.visited_urls
                     .insert(url.to_string(), disk::url_to_path(&url));
-                self.queue.push_back(url);
+                self.queue.push_back(Some(url));
             }
             true => (),
         }
     }
 
     fn pop(&mut self) -> Option<Url> {
-        self.queue.pop_front()
+        //Only a depth delimiter remaining
+        if self.queue.len() == 1 {
+            return None;
+        }
+
+        match self.queue.pop_front() {
+            Some(url) => match url {
+                Some(url) => Some(url),
+                None => {
+                    self.depth_level += 1;
+                    self.push_depth_delimiter();
+                    self.pop()
+                }
+            },
+            None => None,
+        }
     }
 
     fn should_visit(url: &str, base: &Url) -> bool {
@@ -71,25 +98,27 @@ impl Scraper {
     /// Run through the queue and complete it
     pub fn run(&mut self) {
         // TODO: Add multithreading handling
-        while !self.queue.is_empty() {
+        loop {
             match self.pop() {
-                None => panic!("unhandled data race, entered the loop with empty queue"),
+                None => break,
                 Some(url) => {
                     let page = self.downloader.get(&url).unwrap();
                     let dom = dom::Dom::new(&page);
 
-                    let new_urls = dom.find_urls_as_strings();
-                    let new_urls = new_urls
-                        .into_iter()
-                        .filter(|candidate| Scraper::should_visit(candidate, &url));
+                    if self.depth_level < self.args.depth {
+                        let new_urls = dom.find_urls_as_strings();
+                        let new_urls = new_urls
+                            .into_iter()
+                            .filter(|candidate| Scraper::should_visit(candidate, &url));
 
-                    for new_url_string in new_urls {
-                        let new_full_url = url.join(&new_url_string).unwrap();
+                        for new_url_string in new_urls {
+                            let new_full_url = url.join(&new_url_string).unwrap();
 
-                        self.push(new_full_url.clone());
-                        new_url_string.clear();
-                        new_url_string
-                            .push_str(self.visited_urls.get(new_full_url.as_str()).unwrap());
+                            self.push(new_full_url.clone());
+                            new_url_string.clear();
+                            new_url_string
+                                .push_str(self.visited_urls.get(new_full_url.as_str()).unwrap());
+                        }
                     }
 
                     disk::save_file(
@@ -116,12 +145,13 @@ mod tests {
             origin: Url::parse("https://example.com/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
             tries: 1,
+            depth: 5,
         };
         let mut s = Scraper::new(args);
 
-        assert_eq!(s.queue.len(), 1);
+        assert_eq!(s.queue.len(), 2); //Base url + depth delimiter
         assert_eq!(
-            s.queue.pop_front().unwrap().to_string(),
+            s.queue.pop_front().unwrap().unwrap().to_string(),
             "https://example.com/"
         );
     }
@@ -132,6 +162,7 @@ mod tests {
             origin: Url::parse("https://fake_start.net/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
             tries: 1,
+            depth: 5,
         };
         let mut s = Scraper::new(args);
 
@@ -141,6 +172,26 @@ mod tests {
         assert!(!s.visited_urls.contains_key("https://no-no-no.com"));
         assert!(s.visited_urls.contains_key("https://fake_start.net/a_file"));
         assert!(s
+            .visited_urls
+            .contains_key("https://fake_start.net/dir/nested/file"));
+    }
+
+    #[test]
+    fn depth() {
+        let args = args::Args {
+            origin: Url::parse("https://fake_start.net/").unwrap(),
+            output: Some(PathBuf::from("/tmp")),
+            tries: 1,
+            depth: 0,
+        };
+        let mut s = Scraper::new(args);
+
+        s.run();
+
+        assert!(!s.visited_urls.contains_key("https://example.net"));
+        assert!(!s.visited_urls.contains_key("https://no-no-no.com"));
+        assert!(!s.visited_urls.contains_key("https://fake_start.net/a_file"));
+        assert!(!s
             .visited_urls
             .contains_key("https://fake_start.net/dir/nested/file"));
     }
