@@ -146,16 +146,41 @@ mod tests {
             .visited_urls
             .contains("https://fake_start.net/dir/nested/file"));
     }
+
+    #[test]
+    fn run_recursive() {
+        let args = args::Args {
+            origin: Url::parse("https://fake_start.net/").unwrap(),
+            output: Some(PathBuf::from("/tmp")),
+            jobs: 1,
+        };
+        let mut s = Scraper::new(args);
+
+        s.run();
+
+        assert!(s.visited_urls.contains("https://fake_start.net/a_file"));
+        assert!(s
+            .visited_urls
+            .contains("https://fake_start.net/an_answer_file"));
+    }
 }
 
 #[cfg(test)]
 mod downloader {
-    static SIMPLE_BODY: &str = "<!DOCTYPE html>
+    static TEST_BEG: &str = "<!DOCTYPE html>
 <html>
     <body>
-        <p>Absolute <a href=\"https://no-no-no.com\"></a></p>
-        <p>Relative <a href=\"a_file\"></a></p>
-        <p>Relative nested <a href=\"dir/nested/file\"></a></p>
+        <p>Absolute<a href=\"https://no-no-no.com\"></a></p>
+        <p>Relative<a href=\"a_file\"></a></p>
+        <p>Relative nested<a href=\"dir/nested/file\"></a></p>
+    </body>
+</html>
+";
+
+    static TEST_ANS: &str = "<!DOCTYPE html>
+<html>
+    <body>
+        <p>Relative<a href=\"an_answer_file\"></a></p>
     </body>
 </html>
 ";
@@ -168,10 +193,19 @@ mod downloader {
         }
 
         pub fn get(&self, url: reqwest::Url) -> Result<String, reqwest::Error> {
+            let mut res = String::from("");
+
             match url.as_str() == "https://fake_start.net/" {
-                true => Ok(String::from(SIMPLE_BODY)),
-                false => Ok(String::from("")),
+                true => res = String::from(TEST_BEG),
+                false => {}
             }
+
+            match url.as_str() == "https://fake_start.net/a_file" {
+                true => res = String::from(TEST_ANS),
+                false => {}
+            }
+
+            Ok(res)
         }
     }
 }
