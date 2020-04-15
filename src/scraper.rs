@@ -1,7 +1,9 @@
 use reqwest::Url;
 
 use std::collections::HashMap;
-use std::collections::VecDeque;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
 
 #[cfg(not(test))] //For the "mock" at the end of file
 use super::downloader;
@@ -16,7 +18,8 @@ static DEFAULT_CAPACITY: usize = 128;
 /// adds more as new URLs are found
 pub struct Scraper {
     args: args::Args,
-    queue: VecDeque<Option<Url>>,
+    transmitter: Sender<Url>,
+    receiver: Receiver<Url>,
     visited_urls: HashMap<String, String>,
     downloader: downloader::Downloader,
     depth_level: usize,
@@ -25,127 +28,175 @@ pub struct Scraper {
 impl Scraper {
     /// Create a new scraper with command line options
     pub fn new(args: args::Args) -> Scraper {
+        let (tx, rx) = mpsc::channel();
+
         let mut scraper = Scraper {
-            queue: VecDeque::with_capacity(DEFAULT_CAPACITY),
             visited_urls: HashMap::new(),
+            transmitter: tx,
+            receiver: rx,
             downloader: downloader::Downloader::new(args.tries),
             args: args,
             depth_level: 0,
         };
 
-        scraper.queue_init(scraper.args.origin.clone());
-
         scraper
+    }
+
+    fn handle_url(tx: Sender<Url>, url: Url, downloader: Downloader) {
+        let page = downloader.get(&url).unwrap();
+        let dom = dom::Dom::new(&page);
+
+        let new_urls = dom.find_urls_as_strings();
+        let new_urls = new_urls
+            .into_iter()
+            .filter(|candidate| Scraper::should_visit(candidate, &url));
+
+        for new_url_string in new_urls {
+            let new_full_url = url.join(&new_url_string).unwrap();
+
+            self.transmitter.send(new_full_url.clone());
+            new_url_string.clear();
+            new_url_string
+                .push_str(self.visited_urls.get(new_full_url.as_str()).unwrap());
+        }
+
+        disk::save_file(
+            self.visited_urls.get(url.as_str()).unwrap(),
+            &dom.serialize(),
+            &self.args.output,
+            );
+
+        println!("{} has been downloaded", url);
+    }
+
+    /// Run through the channel and complete it
+    pub fn run(&mut self) {
+        /* Push the origin URL through the channel */
+        self.transmitter.send(self.args.origin.clone());
+
+        let tx0 = self.transmitter.clone();
+        let tx1 = self.transmitter.clone();
+
+        let rx0 = self.receiver.clone();
+        let rx1 = self.receiver.clone();
+
+        thread::spawn(move || {
+            loop {
+                match rx0.recv().unwrap() {
+                    Err() => continue, // FIXME: Sleep
+                    Ok(url) => {
+                        handle_url(tx0, url);
+                    }
+                };
+            }
+        });
     }
 
     /* Use wrappers functions for consistency */
 
-    fn push_depth_delimiter(&mut self) {
-        self.queue.push_back(None);
-    }
-
-    fn queue_init(&mut self, url: Url) {
-        //Entry point + depth delimiter
-        self.push(url);
-        self.push_depth_delimiter();
-    }
-
-    fn push(&mut self, url: Url) {
-        match self.visited_urls.contains_key(url.as_str()) {
-            false => {
-                self.visited_urls
-                    .insert(url.to_string(), disk::url_to_path(&url));
-                self.queue.push_back(Some(url));
-            }
-            true => (),
-        }
-    }
-
-    fn pop(&mut self) -> Option<Url> {
-        //Only a depth delimiter remaining
-        if self.queue.len() == 1 {
-            return None;
+    /*
+        fn push_depth_delimiter(&mut self) {
+            self.queue.push_back(None);
         }
 
-        match self.queue.pop_front() {
-            Some(url) => match url {
-                Some(url) => Some(url),
-                None => {
-                    self.depth_level += 1;
-                    self.push_depth_delimiter();
-                    self.pop()
+        fn queue_init(&mut self, url: Url) {
+            //Entry point + depth delimiter
+            self.push(url);
+            self.push_depth_delimiter();
+        }
+
+        fn push(&mut self, url: Url) {
+            match self.visited_urls.contains_key(url.as_str()) {
+                false => {
+                    self.visited_urls
+                        .insert(url.to_string(), disk::url_to_path(&url));
+                    self.queue.push_back(Some(url));
                 }
-            },
-            None => None,
+                true => (),
+            }
         }
-    }
 
-    fn should_visit(url: &str, base: &Url) -> bool {
-        match Url::parse(url) {
-            /* The given candidate is a valid URL, and not a relative path to
-             * the next one. Therefore, we have to check if this URL belongs
-             * to the same domain as our current URL. If the candidate has the
-             * same domain as our base, then we should visit it */
-            Ok(not_ok) => not_ok.domain() == base.domain(),
+        fn pop(&mut self) -> Option<Url> {
+            //Only a depth delimiter remaining
+            if self.queue.len() == 1 {
+                return None;
+            }
 
-            /* Since we couldn't parse this "URL", then it must be a relative
-             * path or a malformed URL. If the URL is malformed, then it will
-             * be handled during the join() call in run() */
-            Err(_) => true,
+            match self.queue.pop_front() {
+                Some(url) => match url {
+                    Some(url) => Some(url),
+                    None => {
+                        self.depth_level += 1;
+                        self.push_depth_delimiter();
+                        self.pop()
+                    }
+                },
+                None => None,
+            }
         }
-    }
 
+        fn should_visit(url: &str, base: &Url) -> bool {
+            match Url::parse(url) {
+                /* The given candidate is a valid URL, and not a relative path to
+                 * the next one. Therefore, we have to check if this URL belongs
+                 * to the same domain as our current URL. If the candidate has the
+                 * same domain as our base, then we should visit it */
+                Ok(not_ok) => not_ok.domain() == base.domain(),
+
+                /* Since we couldn't parse this "URL", then it must be a relative
+                 * path or a malformed URL. If the URL is malformed, then it will
+                 * be handled during the join() call in run() */
+                Err(_) => true,
+            }
+        }
+    */
+
+        /*
+    /// Handle an URL
+    fn handle_url(&self, url: Url) {
+        let page = self.downloader.get(&url).unwrap();
+        let dom = dom::Dom::new(&page);
+
+        if self.depth_level < self.args.depth {
+            let new_urls = dom.find_urls_as_strings();
+            let new_urls = new_urls
+                .into_iter()
+                .filter(|candidate| Scraper::should_visit(candidate, &url));
+
+            for new_url_string in new_urls {
+                let new_full_url = url.join(&new_url_string).unwrap();
+
+                self.transmitter.send(new_full_url.clone());
+                new_url_string.clear();
+                new_url_string
+                    .push_str(self.visited_urls.get(new_full_url.as_str()).unwrap());
+            }
+        }
+
+        disk::save_file(
+            self.visited_urls.get(url.as_str()).unwrap(),
+            &dom.serialize(),
+            &self.args.output,
+            );
+
+        println!("{} has been downloaded", url);
+    }
     /// Run through a small queue for which multithreading isn't as beneficial
     fn run_small_queue(&mut self) {
-            match self.pop() {
-                None => return,
-                Some(url) => {
-                    let page = self.downloader.get(&url).unwrap();
-                    let dom = dom::Dom::new(&page);
-
-                    if self.depth_level < self.args.depth {
-                        let new_urls = dom.find_urls_as_strings();
-                        let new_urls = new_urls
-                            .into_iter()
-                            .filter(|candidate| Scraper::should_visit(candidate, &url));
-
-                        for new_url_string in new_urls {
-                            let new_full_url = url.join(&new_url_string).unwrap();
-
-                            self.push(new_full_url.clone());
-                            new_url_string.clear();
-                            new_url_string
-                                .push_str(self.visited_urls.get(new_full_url.as_str()).unwrap());
-                        }
-                    }
-
-                    disk::save_file(
-                        self.visited_urls.get(url.as_str()).unwrap(),
-                        &dom.serialize(),
-                        &self.args.output,
-                    );
-
-                    println!("{} has been downloaded", url);
-                }
-            };
+        match self.pop() {
+            None => return,
+            Some(url) => {
+                self.handle_url(url);
+            }
+        };
 
         self.run();
     }
 
     /// Run through the queue and complete it
     pub fn run(&mut self) {
-        if self.queue.len() < self.args.jobs {
-            self.run_small_queue();
-        } else {
-            self.run_small_queue();
-            /*
-            for i in 0..self.args.threads {
-                let url = self.pop().unwrap(); //FIXME: Needs an Rc
-                thread::spawn(move || self.handle_url(url));
-            }
-            */
-        }
     }
+    */
 }
 
 #[cfg(test)]
