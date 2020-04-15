@@ -67,28 +67,42 @@ impl Scraper {
         }
     }
 
+    /// Run through a small queue for which multithreading isn't as beneficial
+    fn run_small_queue(&mut self) {
+        match self.pop() {
+            None => return,
+            Some(url) => {
+                let page = self.downloader.get(url.clone()).unwrap();
+                let dom = dom::Dom::new(&page);
+
+                let new_urls = dom.find_urls_as_strings();
+
+                new_urls
+                    .into_iter()
+                    .filter(|candidate| Scraper::should_visit(candidate, &url))
+                    .for_each(|x| self.push(url.join(&x).unwrap()));
+
+                disk::save_file(&url, &page, &self.args.output);
+
+                println!("{} has been downloaded", url);
+            }
+        }
+
+        self.run();
+    }
+
     /// Run through the queue and complete it
     pub fn run(&mut self) {
-        // TODO: Add multithreading handling
-        while !self.queue.is_empty() {
-            match self.pop() {
-                None => panic!("unhandled data race, entered the loop with empty queue"),
-                Some(url) => {
-                    let page = self.downloader.get(url.clone()).unwrap();
-                    let dom = dom::Dom::new(&page);
-
-                    let new_urls = dom.find_urls_as_strings();
-
-                    new_urls
-                        .into_iter()
-                        .filter(|candidate| Scraper::should_visit(candidate, &url))
-                        .for_each(|x| self.push(url.join(&x).unwrap()));
-
-                    disk::save_file(&url, &page, &self.args.output);
-
-                    println!("{} has been downloaded", url);
-                }
-            };
+        if self.queue.len() < self.args.jobs {
+            self.run_small_queue();
+        } else {
+            self.run_small_queue();
+            /*
+            for i in 0..self.args.threads {
+                let url = self.pop().unwrap(); //FIXME: Needs an Rc
+                thread::spawn(move || self.handle_url(url));
+            }
+            */
         }
     }
 }
@@ -103,6 +117,7 @@ mod tests {
         let args = args::Args {
             origin: Url::parse("https://example.com/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
+            jobs: 1,
         };
         let mut s = Scraper::new(args);
 
@@ -118,6 +133,7 @@ mod tests {
         let args = args::Args {
             origin: Url::parse("https://fake_start.net/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
+            jobs: 1,
         };
         let mut s = Scraper::new(args);
 
