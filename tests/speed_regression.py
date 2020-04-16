@@ -12,7 +12,15 @@ def parse_args():
     parser = argparse.ArgumentParser(description = "SuckIT benchmark")
 
 def main():
-    load_prev_result(filename)
+    test_names = ["Single thread", "Two threads", "Four threads"]
+    old_result = load_prev_result(filename)
+
+    new_result = compute_new_result()
+
+    for i in range(test_names):
+        speed_up = new_result[i] * 100 / old_result[i]
+
+        print("{} was {} quicker", test_names[i], speed_up)
 
 if __name__ == "__main_":
     main()
