@@ -1,9 +1,11 @@
-use reqwest::Url;
-use lazy_static::lazy_static;
 use crossbeam_channel::{Receiver, Sender};
+use lazy_static::lazy_static;
+use reqwest::Url;
 
 use std::collections::HashMap;
+use std::sync::Mutex;
 use std::thread;
+use std::path::PathBuf;
 
 #[cfg(not(test))] //For the "mock" at the end of file
 use super::downloader;
@@ -19,13 +21,16 @@ lazy_static! {
     static ref DOWNLOADER: downloader::Downloader = downloader::Downloader::new(5);
 }
 
+lazy_static! {
+    static ref VISITED_URLS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+}
+
 /// Producer and Consumer data structure. Handles the incoming requests and
 /// adds more as new URLs are found
 pub struct Scraper {
     args: args::Args,
     transmitter: Sender<Url>,
     receiver: Receiver<Url>,
-    visited_urls: HashMap<String, String>,
     depth_level: usize,
 }
 
@@ -35,7 +40,6 @@ impl Scraper {
         let (tx, rx) = crossbeam_channel::unbounded();
 
         let mut scraper = Scraper {
-            visited_urls: HashMap::new(),
             transmitter: tx,
             receiver: rx,
             args: args,
@@ -45,7 +49,23 @@ impl Scraper {
         scraper
     }
 
-    fn handle_url(transmitter: &Sender<Url>, url: Url, downloader: &downloader::Downloader) {
+    fn push(transmitter: &Sender<Url>, url: Url) {
+        let mut visited_urls = VISITED_URLS.lock().unwrap();
+
+        match visited_urls.contains_key(url.as_str()) {
+            false => {
+                visited_urls.insert(url.to_string(), disk::url_to_path(&url));
+                match transmitter.send(url) {
+                    Ok(_) => {}
+                    Err(e) => panic!("{}", e),
+                };
+            }
+            true => (),
+        }
+    }
+
+    fn handle_url(transmitter: &Sender<Url>, url: Url, downloader: &downloader::Downloader, 
+                  output: &Option<PathBuf>) {
         let page = downloader.get(&url).unwrap();
         let dom = dom::Dom::new(&page);
 
@@ -56,11 +76,8 @@ impl Scraper {
 
         for new_url_string in new_urls {
             let new_full_url = url.join(&new_url_string).unwrap();
+            Scraper::push(transmitter, new_full_url.clone());
 
-            match transmitter.send(new_full_url.clone()) {
-                Ok(_) => {},
-                Err(e) => panic!("{}", e),
-            };
             /*
             new_url_string.clear();
             new_url_string
@@ -68,13 +85,13 @@ impl Scraper {
                 */
         }
 
-        /*
+        let visited_urls = VISITED_URLS.lock().unwrap();
+
         disk::save_file(
-            self.visited_urls.get(url.as_str()).unwrap(),
+            &disk::url_to_path(&url),
             &dom.serialize(),
-            &self.args.output,
+            output,
             );
-            */
 
         println!("{} has been downloaded", url);
     }
@@ -83,40 +100,34 @@ impl Scraper {
     pub fn run(&mut self) {
         /* Push the origin URL through the channel */
         match self.transmitter.send(self.args.origin.clone()) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => panic!("{}", e),
         };
 
-        let tx0 = self.transmitter.clone();
-        let tx1 = self.transmitter.clone();
+        let mut thread_vec = Vec::with_capacity(self.args.jobs);
 
-        let rx0 = self.receiver.clone();
-        let rx1 = self.receiver.clone();
+        for i in 0..self.args.jobs {
+            let o0 = self.args.output.clone();
+            let tx0 = self.transmitter.clone();
+            let rx0 = self.receiver.clone();
 
-        let t0 = thread::spawn(move || {
-            loop {
-                match rx0.recv() {
-                    Err(_) => continue, // FIXME: Sleep
-                    Ok(url) => {
-                        Scraper::handle_url(&tx0, url, &DOWNLOADER);
-                    }
-                };
-            }
-        });
+            let t0 = thread::spawn(move || {
+                loop {
+                    match rx0.recv() {
+                        Err(_) => continue, // FIXME: Sleep
+                        Ok(url) => {
+                            Scraper::handle_url(&tx0, url, &DOWNLOADER, &o0);
+                        }
+                    };
+                }
+            });
 
-        let t1 = thread::spawn(move || {
-            loop {
-                match rx1.recv() {
-                    Err(_) => continue, // FIXME: Sleep
-                    Ok(url) => {
-                        Scraper::handle_url(&tx1, url, &DOWNLOADER);
-                    }
-                };
-            }
-        });
+            thread_vec.push(t0);
+        }
 
-        t0.join();
-        t1.join();
+        for thread in thread_vec {
+            thread.join().unwrap();
+        }
     }
 
     /* Use wrappers functions for consistency */
