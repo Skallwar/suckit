@@ -39,33 +39,41 @@ impl Scraper {
     pub fn new(args: args::Args) -> Scraper {
         let (tx, rx) = crossbeam::channel::unbounded();
 
-        let mut scraper = Scraper {
+        Scraper {
             downloader: downloader::Downloader::new(args.tries),
             args: args,
             transmitter: tx,
             receiver: rx,
-        };
-
-        scraper
+        }
     }
 
-    /// Push a new URL into the channel
-    fn push(transmitter: &Sender<(Url, usize)>, url: Url, depth: usize, max_depth: usize) {
-        // FIXME: Send String + Path instead of URL
+    /// Add an URL to the visited_urls HashMap
+    fn visit_url(url: &Url, path: String) -> bool {
         let mut visited_urls = VISITED_URLS.lock().unwrap();
 
         match visited_urls.contains_key(url.as_str()) {
             false => {
-                visited_urls.insert(url.to_string(), disk::url_to_path(&url));
-                if depth <= max_depth {
-                    match transmitter.send((url, depth)) {
-                        Ok(_) => {}
-                        Err(e) => panic!("{}", e),
-                    };
-                }
+                visited_urls.insert(url.to_string(), path);
+                true
             }
-            true => (),
+            true => false,
         }
+    }
+
+    /// Push a new URL into the channel
+    fn push(transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
+        match transmitter.send((url, depth)) {
+            Ok(_) => (),
+            Err(e) => panic!("{}", e),
+        };
+    }
+
+    /// Fix the URLs contained in the DOM-tree so they point to each other
+    fn fix_domtree(old_url_str: &mut String, new_url: &Url) {
+        let visited_urls = VISITED_URLS.lock().unwrap();
+
+        old_url_str.clear();
+        old_url_str.push_str(visited_urls.get(new_url.as_str()).unwrap());
     }
 
     /// Process a single URL
@@ -73,25 +81,22 @@ impl Scraper {
         let page = scraper.downloader.get(&url).unwrap();
         let dom = dom::Dom::new(&page);
 
-        let new_urls = dom.find_urls_as_strings();
-        let new_urls = new_urls
+        dom.find_urls_as_strings()
             .into_iter()
-            .filter(|candidate| Scraper::should_visit(candidate, &url));
+            .filter(|candidate| Scraper::should_visit(candidate, &url))
+            .for_each(|next_url| {
+                let next_full_url = url.join(&next_url).unwrap();
+                match Scraper::visit_url(&next_full_url, disk::url_to_path(&next_full_url)) {
+                    true => {
+                        if depth < scraper.args.depth {
+                            Scraper::push(transmitter, next_full_url.clone(), depth + 1);
+                        }
+                    },
+                    false => (),
+                };
 
-        for new_url_string in new_urls {
-            let new_full_url = url.join(&new_url_string).unwrap();
-            Scraper::push(
-                transmitter,
-                new_full_url.clone(),
-                depth + 1,
-                scraper.args.depth,
-            );
-
-            let visited_urls = VISITED_URLS.lock().unwrap();
-
-            new_url_string.clear();
-            new_url_string.push_str(visited_urls.get(new_full_url.as_str()).unwrap());
-        }
+                Scraper::fix_domtree(next_url, &next_full_url);
+            });
 
         let visited_urls = VISITED_URLS.lock().unwrap();
 
@@ -107,25 +112,20 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
-        Scraper::push(
-            &self.transmitter,
-            self.args.origin.clone(),
-            0,
-            self.args.depth,
-        );
+        Scraper::visit_url(&self.args.origin, disk::url_to_path(&self.args.origin));
+        Scraper::push(&self.transmitter, self.args.origin.clone(), 0);
 
         thread::scope(|thread_scope| {
             for _ in 0..self.args.jobs {
-                let o0 = self.args.output.clone(); // FIXME:
-                let tx_clone = self.transmitter.clone();
-                let rx_clone = self.receiver.clone();
+                let tx = self.transmitter.clone();
+                let rx = self.receiver.clone();
                 let self_clone = &self;
 
                 thread_scope.spawn(move |_| {
                     let mut counter = 0;
 
                     while counter < MAX_EMPTY_RECEIVES {
-                        match rx_clone.try_recv() {
+                        match rx.try_recv() {
                             Err(e) => match e {
                                 TryRecvError::Empty => {
                                     counter += 1;
@@ -135,7 +135,7 @@ impl Scraper {
                             },
                             Ok((url, depth)) => {
                                 counter = 0;
-                                Scraper::handle_url(&self_clone, &tx_clone, url, depth);
+                                Scraper::handle_url(&self_clone, &tx, url, depth);
                             }
                         }
                     }
@@ -145,6 +145,7 @@ impl Scraper {
         .unwrap();
     }
 
+    /// If a URL should be visited, or does it belong to another domain
     fn should_visit(url: &str, base: &Url) -> bool {
         match Url::parse(url) {
             /* The given candidate is a valid URL, and not a relative path to
