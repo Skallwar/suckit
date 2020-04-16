@@ -4,7 +4,6 @@ use lazy_static::lazy_static;
 use reqwest::Url;
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time;
 
@@ -30,10 +29,9 @@ lazy_static! {
 /// adds more as new URLs are found
 pub struct Scraper {
     args: args::Args,
-    transmitter: Sender<Url>,
-    receiver: Receiver<Url>,
+    transmitter: Sender<(Url, usize)>,
+    receiver: Receiver<(Url, usize)>,
     downloader: downloader::Downloader,
-    depth_level: usize,
 }
 
 impl Scraper {
@@ -46,31 +44,32 @@ impl Scraper {
             args: args,
             transmitter: tx,
             receiver: rx,
-            depth_level: 0,
         };
 
         scraper
     }
 
     /// Push a new URL into the channel
-    fn push(transmitter: &Sender<Url>, url: Url) {
+    fn push(transmitter: &Sender<(Url, usize)>, url: Url, depth: usize, max_depth: usize) {
         // FIXME: Send String + Path instead of URL
         let mut visited_urls = VISITED_URLS.lock().unwrap();
 
         match visited_urls.contains_key(url.as_str()) {
             false => {
                 visited_urls.insert(url.to_string(), disk::url_to_path(&url));
-                match transmitter.send(url) {
-                    Ok(_) => {}
-                    Err(e) => panic!("{}", e),
-                };
+                if depth <= max_depth {
+                    match transmitter.send((url, depth)) {
+                        Ok(_) => {}
+                        Err(e) => panic!("{}", e),
+                    };
+                }
             }
             true => (),
         }
     }
 
     /// Process a single URL
-    fn handle_url(scraper: &Scraper, transmitter: &Sender<Url>, url: Url) {
+    fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
         let page = scraper.downloader.get(&url).unwrap();
         let dom = dom::Dom::new(&page);
 
@@ -81,7 +80,12 @@ impl Scraper {
 
         for new_url_string in new_urls {
             let new_full_url = url.join(&new_url_string).unwrap();
-            Scraper::push(transmitter, new_full_url.clone());
+            Scraper::push(
+                transmitter,
+                new_full_url.clone(),
+                depth + 1,
+                scraper.args.depth,
+            );
 
             let visited_urls = VISITED_URLS.lock().unwrap();
 
@@ -102,8 +106,13 @@ impl Scraper {
 
     /// Run through the channel and complete it
     pub fn run(&mut self) {
-        /* Push the origin URL through the channel */
-        Scraper::push(&self.transmitter, self.args.origin.clone());
+        /* Push the origin URL and depth (0) through the channel */
+        Scraper::push(
+            &self.transmitter,
+            self.args.origin.clone(),
+            0,
+            self.args.depth,
+        );
 
         thread::scope(|thread_scope| {
             for _ in 0..self.args.jobs {
@@ -124,9 +133,9 @@ impl Scraper {
                                 }
                                 TryRecvError::Disconnected => panic!("{}", e),
                             },
-                            Ok(url) => {
+                            Ok((url, depth)) => {
                                 counter = 0;
-                                Scraper::handle_url(&self_clone, &tx_clone, url);
+                                Scraper::handle_url(&self_clone, &tx_clone, url, depth);
                             }
                         }
                     }
