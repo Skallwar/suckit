@@ -40,17 +40,19 @@ def parse_args():
     if args.suckit:
         SUCKIT = args.suckit
 
-def load_prev_result(filename):
+def load_best_result(filename):
     try:
         with open(filename, "r") as results:
-            res = []
+            res = [float('inf'), float('inf'), float('inf')]
             # There has to be at least a line of '1's in the file
             line = results.readlines()[-1]
 
             reader = csv.reader([line], delimiter = ",")
             for row in reader:
-                for cell in row:
-                    res.append(float(cell))
+                for i in range(len(row)):
+                    candidate = float(row[i])
+                    if candidate < res[i]:
+                        res[i] = candidate
 
     except IOError:
         print(f"Could not read file {filename}")
@@ -99,7 +101,7 @@ def main():
         pass
 
     test_names = ["Single thread", "Two threads", "Four threads"]
-    old_result = load_prev_result(FILENAME)
+    old_result = load_best_result(FILENAME)
 
     new_result = compute_new_result()
 
