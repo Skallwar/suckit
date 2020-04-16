@@ -176,12 +176,6 @@ mod tests {
             depth: 5,
         };
         let mut s = Scraper::new(args);
-
-        assert_eq!(s.queue.len(), 2); //Base url + depth delimiter
-        assert_eq!(
-            s.queue.pop_front().unwrap().unwrap().to_string(),
-            "https://example.com/"
-        );
     }
 
     #[test]
@@ -197,11 +191,12 @@ mod tests {
 
         s.run();
 
-        assert!(!s.visited_urls.contains_key("https://example.net"));
-        assert!(!s.visited_urls.contains_key("https://no-no-no.com"));
-        assert!(s.visited_urls.contains_key("https://fake_start.net/a_file"));
-        assert!(s
-            .visited_urls
+        let visited_urls = VISITED_URLS.lock().unwrap();
+
+        assert!(!visited_urls.contains_key("https://example.net"));
+        assert!(!visited_urls.contains_key("https://no-no-no.com"));
+        assert!(visited_urls.contains_key("https://fake_start.net/a_file"));
+        assert!(visited_urls
             .contains_key("https://fake_start.net/dir/nested/file"));
     }
 
@@ -218,11 +213,12 @@ mod tests {
 
         s.run();
 
-        assert!(!s.visited_urls.contains_key("https://example.net"));
-        assert!(!s.visited_urls.contains_key("https://no-no-no.com"));
-        assert!(!s.visited_urls.contains_key("https://fake_start.net/a_file"));
-        assert!(!s
-            .visited_urls
+        let visited_urls = VISITED_URLS.lock().unwrap();
+
+        assert!(!visited_urls.contains_key("https://example.net"));
+        assert!(!visited_urls.contains_key("https://no-no-no.com"));
+        assert!(!visited_urls.contains_key("https://fake_start.net/a_file"));
+        assert!(!visited_urls
             .contains_key("https://fake_start.net/dir/nested/file"));
     }
 
@@ -239,9 +235,10 @@ mod tests {
 
         s.run();
 
-        assert!(s.visited_urls.contains_key("https://fake_start.net/a_file"));
-        assert!(s
-            .visited_urls
+        let visited_urls = VISITED_URLS.lock().unwrap();
+
+        assert!(visited_urls.contains_key("https://fake_start.net/a_file"));
+        assert!(visited_urls
             .contains_key("https://fake_start.net/an_answer_file"));
     }
 }
