@@ -10,7 +10,7 @@ FILENAME = "speed.csv"
 SUCKIT = "suckit"
 
 # URL to download
-URL = "https://books.toscrape.com"
+URL = "http://books.toscrape.com"
 
 # Path to store the downloaded data
 PATH = "/tmp/suckit_speed"
@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import time
+from termcolor import colored
 
 def parse_args():
     global FILENAME
@@ -70,16 +71,21 @@ def compute_new_result():
     res = []
 
     for count in thread_counts:
-        start_time = time.time()
+        time_total = 0
+        for i in range(TEST_RETRIES):
+            start_time = time.time()
 
-        print(f"-j {count}")
-        print(f"-o {PATH}")
-        subprocess.Popen([SUCKIT, "-j {}".format(count), "-o {}".format(PATH), URL],
-                stdout = open("/dev/null", "w"), shell = False).pid
+            suckit_pid = subprocess.Popen([SUCKIT, "-j", count, "-o", PATH, URL],
+                    stdout = open("/dev/null", "w"), shell = False)
+            suckit_pid.wait()
 
-        end_time = time.time()
+            end_time = time.time()
 
-        res.append(end_time - start_time)
+            time_total += end_time - start_time
+            print(f"Completed {i + 1} iteration for job with {count} thread(s)", end = "\r")
+
+        res.append(time_total / TEST_RETRIES)
+        print("")
 
     return res
 
@@ -95,12 +101,17 @@ def main():
     test_names = ["Single thread", "Two threads", "Four threads"]
     old_result = load_prev_result(FILENAME)
 
-    new_result = compute_new_result()
+    new_result = [12, 9924, 36.8]
 
     for i in range(0, len(test_names)):
         speed_up = new_result[i] * 100 / old_result[i] - 100;
 
-        print(f"{test_names[i]} was {speed_up} quicker")
+        str_speed_up = f"{colored(speed_up, 'green')}"
+
+        if speed_up > 0:
+            str_speed_up = f"{colored(speed_up, 'red')}"
+
+        print(f"{test_names[i]} was {str_speed_up} slower")
 
     write_new_result(FILENAME, new_result)
 
