@@ -1,4 +1,4 @@
-use crossbeam::channel::{Receiver, Sender};
+use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
 use lazy_static::lazy_static;
 use reqwest::Url;
@@ -6,6 +6,7 @@ use reqwest::Url;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::time;
 
 #[cfg(not(test))] //For the "mock" at the end of file
 use super::downloader;
@@ -14,7 +15,12 @@ use super::args;
 use super::disk;
 use super::dom;
 
-static DEFAULT_CAPACITY: usize = 128;
+/// Maximum number of empty recv() from the channel
+static MAX_EMPTY_RECEIVES: usize = 10;
+
+/// Sleep duration on empty recv()
+static SLEEP_MILLIS: u64 = 100;
+static SLEEP_DURATION: time::Duration = time::Duration::from_millis(SLEEP_MILLIS);
 
 lazy_static! {
     static ref VISITED_URLS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
@@ -47,7 +53,8 @@ impl Scraper {
     }
 
     /// Push a new URL into the channel
-    fn push(transmitter: &Sender<Url>, url: Url) { // FIXME: Send String + Path instead of URL
+    fn push(transmitter: &Sender<Url>, url: Url) {
+        // FIXME: Send String + Path instead of URL
         let mut visited_urls = VISITED_URLS.lock().unwrap();
 
         match visited_urls.contains_key(url.as_str()) {
@@ -63,11 +70,7 @@ impl Scraper {
     }
 
     /// Process a single URL
-    fn handle_url(
-        scraper: &Scraper,
-        transmitter: &Sender<Url>,
-        url: Url,
-    ) {
+    fn handle_url(scraper: &Scraper, transmitter: &Sender<Url>, url: Url) {
         let page = scraper.downloader.get(&url).unwrap();
         let dom = dom::Dom::new(&page);
 
@@ -83,8 +86,7 @@ impl Scraper {
             let visited_urls = VISITED_URLS.lock().unwrap();
 
             new_url_string.clear();
-            new_url_string
-                .push_str(visited_urls.get(new_full_url.as_str()).unwrap());
+            new_url_string.push_str(visited_urls.get(new_full_url.as_str()).unwrap());
         }
 
         let visited_urls = VISITED_URLS.lock().unwrap();
@@ -101,26 +103,32 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL through the channel */
-        match self.transmitter.send(self.args.origin.clone()) {
-            Ok(_) => {}
-            Err(e) => panic!("{}", e),
-        };
+        Scraper::push(&self.transmitter, self.args.origin.clone());
 
         thread::scope(|thread_scope| {
-            for i in 0..self.args.jobs {
+            for _ in 0..self.args.jobs {
                 let o0 = self.args.output.clone(); // FIXME:
                 let tx_clone = self.transmitter.clone();
                 let rx_clone = self.receiver.clone();
                 let self_clone = &self;
 
                 thread_scope.spawn(move |_| {
-                    loop {
-                        match rx_clone.recv() {
-                            Err(_) => continue, // FIXME: Sleep
+                    let mut counter = 0;
+
+                    while counter < MAX_EMPTY_RECEIVES {
+                        match rx_clone.try_recv() {
+                            Err(e) => match e {
+                                TryRecvError::Empty => {
+                                    counter += 1;
+                                    std::thread::sleep(SLEEP_DURATION);
+                                }
+                                TryRecvError::Disconnected => panic!("{}", e),
+                            },
                             Ok(url) => {
+                                counter = 0;
                                 Scraper::handle_url(&self_clone, &tx_clone, url);
                             }
-                        };
+                        }
                     }
                 });
             }
