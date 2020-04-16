@@ -185,7 +185,8 @@ mod tests {
             tries: 1,
             depth: 5,
         };
-        let mut s = Scraper::new(args);
+
+        let _ = Scraper::new(args);
     }
 
     #[test]
@@ -201,13 +202,15 @@ mod tests {
 
         s.run();
 
-        let visited_urls = VISITED_URLS.lock().unwrap();
+        let mut visited_urls = VISITED_URLS.lock().unwrap();
 
         assert!(!visited_urls.contains("https://example.net"));
         assert!(!visited_urls.contains("https://no-no-no.com"));
         assert!(visited_urls.contains("https://fake_start.net/a_file"));
         assert!(visited_urls
             .contains("https://fake_start.net/dir/nested/file"));
+
+        visited_urls.clear();
     }
 
     #[test]
@@ -223,13 +226,16 @@ mod tests {
 
         s.run();
 
-        let visited_urls = VISITED_URLS.lock().unwrap();
+        let mut visited_urls = VISITED_URLS.lock().unwrap();
 
         assert!(!visited_urls.contains("https://example.net"));
         assert!(!visited_urls.contains("https://no-no-no.com"));
+        assert!(!visited_urls.contains("https://fake_start.net/a_file"));
         assert!(!visited_urls.contains("https://fake_start.net/an_answer_file"));
         assert!(!visited_urls
             .contains("https://fake_start.net/dir/nested/file"));
+
+        visited_urls.clear();
     }
 
     #[test]
@@ -245,11 +251,13 @@ mod tests {
 
         s.run();
 
-        let visited_urls = VISITED_URLS.lock().unwrap();
+        let mut visited_urls = VISITED_URLS.lock().unwrap();
 
         assert!(visited_urls.contains("https://fake_start.net/a_file"));
         assert!(visited_urls
             .contains("https://fake_start.net/an_answer_file"));
+
+        visited_urls.clear();
     }
 }
 
