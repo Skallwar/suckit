@@ -1,11 +1,11 @@
-use crossbeam_channel::{Receiver, Sender};
+use crossbeam::channel::{Receiver, Sender};
+use crossbeam::thread;
 use lazy_static::lazy_static;
 use reqwest::Url;
 
 use std::collections::HashMap;
-use std::sync::Mutex;
-use std::thread;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 #[cfg(not(test))] //For the "mock" at the end of file
 use super::downloader;
@@ -17,11 +17,6 @@ use super::dom;
 static DEFAULT_CAPACITY: usize = 128;
 
 lazy_static! {
-    // FIXME: Get number of tries given to scraper
-    static ref DOWNLOADER: downloader::Downloader = downloader::Downloader::new(5);
-}
-
-lazy_static! {
     static ref VISITED_URLS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
@@ -31,25 +26,28 @@ pub struct Scraper {
     args: args::Args,
     transmitter: Sender<Url>,
     receiver: Receiver<Url>,
+    downloader: downloader::Downloader,
     depth_level: usize,
 }
 
 impl Scraper {
     /// Create a new scraper with command line options
     pub fn new(args: args::Args) -> Scraper {
-        let (tx, rx) = crossbeam_channel::unbounded();
+        let (tx, rx) = crossbeam::channel::unbounded();
 
         let mut scraper = Scraper {
+            downloader: downloader::Downloader::new(args.tries),
+            args: args,
             transmitter: tx,
             receiver: rx,
-            args: args,
             depth_level: 0,
         };
 
         scraper
     }
 
-    fn push(transmitter: &Sender<Url>, url: Url) {
+    /// Push a new URL into the channel
+    fn push(transmitter: &Sender<Url>, url: Url) { // FIXME: Send String + Path instead of URL
         let mut visited_urls = VISITED_URLS.lock().unwrap();
 
         match visited_urls.contains_key(url.as_str()) {
@@ -64,9 +62,13 @@ impl Scraper {
         }
     }
 
-    fn handle_url(transmitter: &Sender<Url>, url: Url, downloader: &downloader::Downloader, 
-                  output: &Option<PathBuf>) {
-        let page = downloader.get(&url).unwrap();
+    /// Process a single URL
+    fn handle_url(
+        scraper: &Scraper,
+        transmitter: &Sender<Url>,
+        url: Url,
+    ) {
+        let page = scraper.downloader.get(&url).unwrap();
         let dom = dom::Dom::new(&page);
 
         let new_urls = dom.find_urls_as_strings();
@@ -78,20 +80,20 @@ impl Scraper {
             let new_full_url = url.join(&new_url_string).unwrap();
             Scraper::push(transmitter, new_full_url.clone());
 
-            /*
+            let visited_urls = VISITED_URLS.lock().unwrap();
+
             new_url_string.clear();
             new_url_string
-                .push_str(self.visited_urls.get(new_full_url.as_str()).unwrap());
-                */
+                .push_str(visited_urls.get(new_full_url.as_str()).unwrap());
         }
 
         let visited_urls = VISITED_URLS.lock().unwrap();
 
         disk::save_file(
-            &disk::url_to_path(&url),
+            visited_urls.get(url.as_str()).unwrap(),
             &dom.serialize(),
-            output,
-            );
+            &scraper.args.output,
+        );
 
         println!("{} has been downloaded", url);
     }
@@ -104,75 +106,27 @@ impl Scraper {
             Err(e) => panic!("{}", e),
         };
 
-        let mut thread_vec = Vec::with_capacity(self.args.jobs);
+        thread::scope(|thread_scope| {
+            for i in 0..self.args.jobs {
+                let o0 = self.args.output.clone(); // FIXME:
+                let tx_clone = self.transmitter.clone();
+                let rx_clone = self.receiver.clone();
+                let self_clone = &self;
 
-        for i in 0..self.args.jobs {
-            let o0 = self.args.output.clone();
-            let tx0 = self.transmitter.clone();
-            let rx0 = self.receiver.clone();
-
-            let t0 = thread::spawn(move || {
-                loop {
-                    match rx0.recv() {
-                        Err(_) => continue, // FIXME: Sleep
-                        Ok(url) => {
-                            Scraper::handle_url(&tx0, url, &DOWNLOADER, &o0);
-                        }
-                    };
-                }
-            });
-
-            thread_vec.push(t0);
-        }
-
-        for thread in thread_vec {
-            thread.join().unwrap();
-        }
-    }
-
-    /* Use wrappers functions for consistency */
-
-    /*
-    fn push_depth_delimiter(&mut self) {
-        self.queue.push_back(None);
-    }
-
-    fn queue_init(&mut self, url: Url) {
-        //Entry point + depth delimiter
-        self.push(url);
-        self.push_depth_delimiter();
-    }
-
-    fn push(&mut self, url: Url) {
-        match self.visited_urls.contains_key(url.as_str()) {
-            false => {
-                self.visited_urls
-                    .insert(url.to_string(), disk::url_to_path(&url));
-                self.queue.push_back(Some(url));
+                thread_scope.spawn(move |_| {
+                    loop {
+                        match rx_clone.recv() {
+                            Err(_) => continue, // FIXME: Sleep
+                            Ok(url) => {
+                                Scraper::handle_url(&self_clone, &tx_clone, url);
+                            }
+                        };
+                    }
+                });
             }
-            true => (),
-        }
+        })
+        .unwrap();
     }
-
-    fn pop(&mut self) -> Option<Url> {
-        //Only a depth delimiter remaining
-        if self.queue.len() == 1 {
-            return None;
-        }
-
-        match self.queue.pop_front() {
-            Some(url) => match url {
-                Some(url) => Some(url),
-                None => {
-                    self.depth_level += 1;
-                    self.push_depth_delimiter();
-                    self.pop()
-                }
-            },
-            None => None,
-        }
-    }
-    */
 
     fn should_visit(url: &str, base: &Url) -> bool {
         match Url::parse(url) {
@@ -188,53 +142,6 @@ impl Scraper {
             Err(_) => true,
         }
     }
-
-    /*
-    /// Handle an URL
-    fn handle_url(&self, url: Url) {
-        let page = self.downloader.get(&url).unwrap();
-        let dom = dom::Dom::new(&page);
-
-        if self.depth_level < self.args.depth {
-            let new_urls = dom.find_urls_as_strings();
-            let new_urls = new_urls
-                .into_iter()
-                .filter(|candidate| Scraper::should_visit(candidate, &url));
-
-            for new_url_string in new_urls {
-                let new_full_url = url.join(&new_url_string).unwrap();
-
-                self.transmitter.send(new_full_url.clone());
-                new_url_string.clear();
-                new_url_string
-                    .push_str(self.visited_urls.get(new_full_url.as_str()).unwrap());
-            }
-        }
-
-        disk::save_file(
-            self.visited_urls.get(url.as_str()).unwrap(),
-            &dom.serialize(),
-            &self.args.output,
-            );
-
-        println!("{} has been downloaded", url);
-    }
-    /// Run through a small queue for which multithreading isn't as beneficial
-    fn run_small_queue(&mut self) {
-        match self.pop() {
-            None => return,
-            Some(url) => {
-                self.handle_url(url);
-            }
-        };
-
-        self.run();
-    }
-
-    /// Run through the queue and complete it
-    pub fn run(&mut self) {
-    }
-    */
 }
 
 #[cfg(test)]
