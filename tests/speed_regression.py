@@ -101,7 +101,7 @@ def main():
     test_names = ["Single thread", "Two threads", "Four threads"]
     old_result = load_prev_result(FILENAME)
 
-    new_result = [12, 9924, 36.8]
+    new_result = compute_new_result()
 
     for i in range(0, len(test_names)):
         speed_up = new_result[i] * 100 / old_result[i] - 100;
