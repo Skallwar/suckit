@@ -187,6 +187,8 @@ mod tests {
         };
 
         let _ = Scraper::new(args);
+
+        VISITED_URLS.lock().unwrap().clear();
     }
 
     #[test]
@@ -209,6 +211,8 @@ mod tests {
         assert!(visited_urls.contains("https://fake_start.net/a_file"));
         assert!(visited_urls
             .contains("https://fake_start.net/dir/nested/file"));
+        assert!(visited_urls
+            .contains("https://fake_start.net/an_answer_file"));
 
         visited_urls.clear();
     }
@@ -234,28 +238,6 @@ mod tests {
         assert!(!visited_urls.contains("https://fake_start.net/an_answer_file"));
         assert!(!visited_urls
             .contains("https://fake_start.net/dir/nested/file"));
-
-        visited_urls.clear();
-    }
-
-    #[test]
-    fn run_recursive() {
-        let args = args::Args {
-            origin: Url::parse("https://fake_start.net/").unwrap(),
-            output: Some(PathBuf::from("/tmp")),
-            jobs: 1,
-            tries: 1,
-            depth: 5,
-        };
-        let mut s = Scraper::new(args);
-
-        s.run();
-
-        let mut visited_urls = VISITED_URLS.lock().unwrap();
-
-        assert!(visited_urls.contains("https://fake_start.net/a_file"));
-        assert!(visited_urls
-            .contains("https://fake_start.net/an_answer_file"));
 
         visited_urls.clear();
     }
