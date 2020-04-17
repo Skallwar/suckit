@@ -22,16 +22,6 @@ static MAX_EMPTY_RECEIVES: usize = 10;
 static SLEEP_MILLIS: u64 = 100;
 static SLEEP_DURATION: time::Duration = time::Duration::from_millis(SLEEP_MILLIS);
 
-lazy_static! {
-    /// HashSet containing visited URLs
-    static ref VISITED_URLS: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
-}
-
-lazy_static! {
-    /// HashMap containing URLs and their path on the disk
-    static ref PATH_MAP: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
-}
-
 /// Producer and Consumer data structure. Handles the incoming requests and
 /// adds more as new URLs are found
 pub struct Scraper {
@@ -39,6 +29,8 @@ pub struct Scraper {
     transmitter: Sender<(Url, usize)>,
     receiver: Receiver<(Url, usize)>,
     downloader: downloader::Downloader,
+    visited_urls: Mutex<HashSet<String>>,
+    path_map: Mutex<HashMap<String, String>>,
 }
 
 impl Scraper {
@@ -51,12 +43,14 @@ impl Scraper {
             args: args,
             transmitter: tx,
             receiver: rx,
+            visited_urls: Mutex::new(HashSet::new()),
+            path_map: Mutex::new(HashMap::new()),
         }
     }
 
     /// Add an URL to the path_map HashMap
-    fn map_url(url: &Url, path: String) -> bool {
-        let mut path_map = PATH_MAP.lock().unwrap();
+    fn map_url(&self, url: &Url, path: String) -> bool {
+        let mut path_map = self.path_map.lock().unwrap();
 
         match path_map.contains_key(url.as_str()) {
             false => {
@@ -76,8 +70,8 @@ impl Scraper {
     }
 
     /// Fix the URLs contained in the DOM-tree so they point to each other
-    fn fix_domtree(old_url_str: &mut String, new_url: &Url) {
-        let path_map = PATH_MAP.lock().unwrap();
+    fn fix_domtree(&self, old_url_str: &mut String, new_url: &Url) {
+        let path_map = self.path_map.lock().unwrap();
 
         old_url_str.clear();
         old_url_str.push_str(path_map.get(new_url.as_str()).unwrap());
@@ -93,19 +87,19 @@ impl Scraper {
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
                 let next_full_url = url.join(&next_url).unwrap();
-                match Scraper::map_url(&next_full_url, disk::url_to_path(&next_full_url)) {
+                match scraper.map_url(&next_full_url, disk::url_to_path(&next_full_url)) {
                     true => {
                         if depth < scraper.args.depth {
                             Scraper::push(transmitter, next_full_url.clone(), depth + 1);
                         }
-                    },
+                    }
                     false => (),
                 };
 
-                Scraper::fix_domtree(next_url, &next_full_url);
+                scraper.fix_domtree(next_url, &next_full_url);
             });
 
-        let path_map = PATH_MAP.lock().unwrap();
+        let path_map = scraper.path_map.lock().unwrap();
 
         disk::save_file(
             path_map.get(url.as_str()).unwrap(),
@@ -113,7 +107,7 @@ impl Scraper {
             &scraper.args.output,
         );
 
-        VISITED_URLS.lock().unwrap().insert(url.to_string());
+        scraper.visited_urls.lock().unwrap().insert(url.to_string());
 
         println!("{} has been downloaded", url);
     }
@@ -121,7 +115,7 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
-        Scraper::map_url(&self.args.origin, disk::url_to_path(&self.args.origin));
+        self.map_url(&self.args.origin, disk::url_to_path(&self.args.origin));
         Scraper::push(&self.transmitter, self.args.origin.clone(), 0);
 
         thread::scope(|thread_scope| {
@@ -187,8 +181,6 @@ mod tests {
         };
 
         let _ = Scraper::new(args);
-
-        VISITED_URLS.lock().unwrap().clear();
     }
 
     #[test]
@@ -200,21 +192,18 @@ mod tests {
             tries: 1,
             depth: 5,
         };
+
         let mut s = Scraper::new(args);
 
         s.run();
 
-        let mut visited_urls = VISITED_URLS.lock().unwrap();
+        let visited_urls = s.visited_urls.lock().unwrap();
 
         assert!(!visited_urls.contains("https://example.net"));
         assert!(!visited_urls.contains("https://no-no-no.com"));
         assert!(visited_urls.contains("https://fake_start.net/a_file"));
-        assert!(visited_urls
-            .contains("https://fake_start.net/dir/nested/file"));
-        assert!(visited_urls
-            .contains("https://fake_start.net/an_answer_file"));
-
-        visited_urls.clear();
+        assert!(visited_urls.contains("https://fake_start.net/dir/nested/file"));
+        assert!(visited_urls.contains("https://fake_start.net/an_answer_file"));
     }
 
     #[test]
@@ -230,16 +219,13 @@ mod tests {
 
         s.run();
 
-        let mut visited_urls = VISITED_URLS.lock().unwrap();
+        let visited_urls = s.visited_urls.lock().unwrap();
 
         assert!(!visited_urls.contains("https://example.net"));
         assert!(!visited_urls.contains("https://no-no-no.com"));
         assert!(!visited_urls.contains("https://fake_start.net/a_file"));
         assert!(!visited_urls.contains("https://fake_start.net/an_answer_file"));
-        assert!(!visited_urls
-            .contains("https://fake_start.net/dir/nested/file"));
-
-        visited_urls.clear();
+        assert!(!visited_urls.contains("https://fake_start.net/dir/nested/file"));
     }
 }
 
