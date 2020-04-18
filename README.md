@@ -8,6 +8,6 @@ your disk.
 # Features
 
 * [ ] Vacuum the entirety of a website recursively
-* [ ] Use multithreading
+* [x] Use multithreading
 * [x] Write the website's content to your disk
 * [x] Offline navigation

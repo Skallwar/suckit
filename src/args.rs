@@ -11,6 +11,9 @@ pub struct Args {
     #[structopt(short, long, parse(from_os_str))]
     pub output: Option<PathBuf>,
 
+    #[structopt(short, long, default_value = "1")]
+    pub jobs: usize,
+
     #[structopt(short, long, default_value = "5")]
     pub depth: usize,
 
