@@ -16,7 +16,7 @@ impl Logger {
     }
 
     /// Write a log message to stdout
-    fn write_log(header: ColoredString, message: String) {
+    fn write_log(header: ColoredString, message: &String) {
         // Sadly we can't use a static format litteral so we have to retype
         // this for every function...
         println!("{}: [{}] {}", Logger::get_timestamp(), header, message);
@@ -24,12 +24,12 @@ impl Logger {
 
     /// Display an INFO message
     pub fn info(message: String) {
-        Logger::write_log("INFO".blue(), message);
+        Logger::write_log("INFO".blue(), &message);
     }
 
     /// Display a WARNING message
     pub fn warn(message: String) {
-        Logger::write_log("WARN".yellow(), message);
+        Logger::write_log("WARN".yellow(), &message);
     }
 
     /// Display an ERROR message
