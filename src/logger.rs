@@ -12,16 +12,26 @@ pub struct Logger {
 }
 
 impl Logger {
+    /// Get the current formatted timestamp
+    fn get_timestamp() -> String {
+        format!("{}", Local::now().format(TIME_FORMAT))
+    }
+
+    /// Display an INFO message
     pub fn info(message: String) {
-        println!("{}: [{}] {}", Local::now().format(TIME_FORMAT), "INFO".blue(), message);
+        // Sadly we can't use a static format litteral so we have to retype
+        // this for every function...
+        println!("{}: [{}] {}", Logger::get_timestamp(), "INFO".blue(), message);
     }
 
+    /// Display a WARNING message
     pub fn warn(message: String) {
-        println!("{}: [{}] {}", Local::now().format(TIME_FORMAT), "WARN".yellow(), message);
+        println!("{}: [{}] {}", Logger::get_timestamp(), "WARN".yellow(), message);
     }
 
+    /// Display an ERROR message
     pub fn error(message: String) {
-        eprintln!("{}: [{}] {}", Local::now().format(TIME_FORMAT), "ERROR".red(), message);
+        eprintln!("{}: [{}] {}", Logger::get_timestamp(), "ERROR".red(), message);
     }
 }
 
