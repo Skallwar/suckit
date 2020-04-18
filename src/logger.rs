@@ -1,13 +1,8 @@
 use colored::*;
 use chrono::Local;
 
-/// Time formatting string used in the call to Local::now()
-/// Outputs the following:
-///     <YEAR>-<MONTH>-<DAY>T<HOUR>:<MINUTES>:<SECONDS>
-static TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
-
 /// Write a message using the following format
-/// <TIME_FORMAT>: [<header>] <message>
+/// <time>: [<header>] <message>
 pub struct Logger {
 }
 
@@ -17,7 +12,7 @@ pub struct Logger {
 impl Logger {
     /// Get the current formatted timestamp
     fn get_timestamp() -> String {
-        format!("{}", Local::now().format(TIME_FORMAT))
+        format!("{}", Local::now())
     }
 
     /// Display an INFO message
