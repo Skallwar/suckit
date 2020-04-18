@@ -110,7 +110,7 @@ impl Scraper {
 
         scraper.visited_urls.lock().unwrap().insert(url.to_string());
 
-        if !scraper.args.quiet {
+        if scraper.args.verbose {
             info!("Downloaded {}", url);
         }
     }

@@ -20,8 +20,8 @@ pub struct Args {
     #[structopt(short, long, default_value = "20")]
     pub tries: usize,
 
-    #[structopt(short, long, default_value = "true")]
-    pub quiet: bool,
+    #[structopt(short, long, parse(try_from_str), default_value = "false")]
+    pub verbose: bool,
 }
 
 impl Args {
