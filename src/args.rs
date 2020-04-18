@@ -20,7 +20,7 @@ pub struct Args {
     #[structopt(short, long, default_value = "20")]
     pub tries: usize,
 
-    #[structopt(short, long, defautl_value = "true")]
+    #[structopt(short, long, default_value = "true")]
     pub quiet: bool,
 }
 
