@@ -1,6 +1,5 @@
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
-use lazy_static::lazy_static;
 use reqwest::Url;
 
 use std::collections::HashMap;

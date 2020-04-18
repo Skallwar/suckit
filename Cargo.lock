@@ -1227,7 +1227,6 @@ version = "0.1.0"
 dependencies = [
  "crossbeam",
  "kuchiki",
- "lazy_static",
  "pretty_assertions",
  "reqwest",
  "structopt",

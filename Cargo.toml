@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 structopt = "0.3"
 crossbeam = "0.7"
-lazy_static = "1.4"
 reqwest = { version = "0.10", features = ["blocking"] }
 pretty_assertions = "0.6"
 kuchiki = "0.8"
