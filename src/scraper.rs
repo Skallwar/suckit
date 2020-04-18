@@ -14,6 +14,8 @@ use super::args;
 use super::disk;
 use super::dom;
 
+use crate::info;
+
 /// Maximum number of empty recv() from the channel
 static MAX_EMPTY_RECEIVES: usize = 10;
 
@@ -108,7 +110,9 @@ impl Scraper {
 
         scraper.visited_urls.lock().unwrap().insert(url.to_string());
 
-        println!("{} has been downloaded", url);
+        if scraper.args.verbose {
+            info!("Downloaded {}", url);
+        }
     }
 
     /// Run through the channel and complete it
@@ -177,6 +181,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 5,
+            verbose: true,
         };
 
         let _ = Scraper::new(args);
@@ -190,6 +195,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 5,
+            verbose: true,
         };
 
         let mut s = Scraper::new(args);
@@ -213,6 +219,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 0,
+            verbose: true,
         };
         let mut s = Scraper::new(args);
 
@@ -235,6 +242,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 1,
+            verbose: true,
         };
         let mut s = Scraper::new(args);
 
