@@ -181,6 +181,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 5,
+            quiet: true,
         };
 
         let _ = Scraper::new(args);
@@ -194,6 +195,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 5,
+            quiet: true,
         };
 
         let mut s = Scraper::new(args);
@@ -217,6 +219,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 0,
+            quiet: true,
         };
         let mut s = Scraper::new(args);
 
@@ -239,6 +242,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 1,
+            quiet: true,
         };
         let mut s = Scraper::new(args);
 
