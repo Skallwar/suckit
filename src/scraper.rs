@@ -226,6 +226,26 @@ mod tests {
         assert!(!visited_urls.contains("https://fake_start.net/an_answer_file"));
         assert!(!visited_urls.contains("https://fake_start.net/dir/nested/file"));
     }
+
+    #[test]
+    fn depth_tricky() {
+        let args = args::Args {
+            origin: Url::parse("https://fake_start.net/").unwrap(),
+            output: Some(PathBuf::from("/tmp")),
+            jobs: 1,
+            tries: 1,
+            depth: 1,
+        };
+        let mut s = Scraper::new(args);
+
+        s.run();
+
+        let visited_urls = s.visited_urls.lock().unwrap();
+
+        assert!(visited_urls.contains("https://fake_start.net/a_file"));
+        assert!(visited_urls.contains("https://fake_start.net/dir/nested/file"));
+        assert!(!visited_urls.contains("https://fake_start.net/an_answer_file"));
+    }
 }
 
 #[cfg(test)]
