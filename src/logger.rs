@@ -11,6 +11,9 @@ static TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 pub struct Logger {
 }
 
+// Allow the dead code in case we don't use all the macros. Using it here means
+// it doesn't affect the other modules in the crate
+#[allow(dead_code)]
 impl Logger {
     /// Get the current formatted timestamp
     fn get_timestamp() -> String {
@@ -36,16 +39,19 @@ impl Logger {
 }
 
 #[macro_export]
+/// Print an info message on stdout
 macro_rules! info {
     ($($arg: tt)*) => ($crate::logger::Logger::info(format!($($arg)*)));
 }
 
 #[macro_export]
+/// Print a warning message on stdout
 macro_rules! warn {
     ($($arg: tt)*) => ($crate::logger::Logger::warn(format!($($arg)*)));
 }
 
 #[macro_export]
+/// Print an error message on stderr
 macro_rules! error {
     ($($arg: tt)*) => ($crate::logger::Logger::error(format!($($arg)*)));
 }
