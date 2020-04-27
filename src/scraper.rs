@@ -14,7 +14,7 @@ use super::args;
 use super::disk;
 use super::dom;
 
-use crate::info;
+use crate::{info, warn};
 
 /// Maximum number of empty recv() from the channel
 static MAX_EMPTY_RECEIVES: usize = 10;
@@ -83,7 +83,7 @@ impl Scraper {
         transmitter: &Sender<(Url, usize)>,
         url: &Url,
         depth: usize,
-        data: &String,
+        data: &str,
     ) {
         let dom = dom::Dom::new(data);
 
@@ -116,7 +116,12 @@ impl Scraper {
     fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
         let page = scraper.downloader.get(&url).unwrap();
 
-        Scraper::handle_html(scraper, transmitter, &url, depth, &page);
+        match page.get_data() {
+            downloader::ResponseData::Html(data) => {
+                Scraper::handle_html(scraper, transmitter, &url, depth, data)
+            }
+            _ => warn!("Not handled yet"),
+        }
 
         scraper.visited_urls.lock().unwrap().insert(url.to_string());
 

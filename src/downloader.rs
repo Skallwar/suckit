@@ -1,9 +1,20 @@
+use bytes::Bytes;
 use reqwest::Url;
+use std::borrow::Borrow;
 
 /// Wrapper around a reqwest client, used to get the content of web pages
 pub struct Downloader {
     client: reqwest::blocking::Client,
     tries: usize,
+}
+
+pub enum ResponseData {
+    Html(String),
+    Other(Vec<u8>),
+}
+
+pub struct Response {
+    data: ResponseData,
 }
 
 impl Downloader {
@@ -15,12 +26,35 @@ impl Downloader {
         }
     }
 
+    fn is_html(content_type: &str) -> bool {
+        content_type.contains("text/html")
+    }
+
     /// Download the content located at a given URL
-    pub fn get(&self, url: &Url) -> Result<String, reqwest::Error> {
+    pub fn get(&self, url: &Url) -> Result<Response, reqwest::Error> {
         let mut error: Option<reqwest::Error> = None;
         for _ in 0..self.tries {
             match self.client.get(url.clone()).send() {
-                Ok(data) => return Ok(data.text().unwrap()),
+                Ok(mut data) => {
+                    let data_type = data
+                        .headers()
+                        .get("content-type")
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .to_string();
+
+                    let data = match Downloader::is_html(&data_type) {
+                        true => ResponseData::Html(data.text().unwrap()),
+                        false => {
+                            let mut raw_data: Vec<u8> = Vec::new();
+                            data.copy_to(&mut raw_data);
+                            ResponseData::Other(raw_data)
+                        }
+                    };
+
+                    return Ok(Response::new(data));
+                }
                 Err(e) => {
                     println!("Downloader.get() has encounter an error: {}", e);
                     error = Some(e);
@@ -29,6 +63,16 @@ impl Downloader {
         }
 
         return Err(error.unwrap());
+    }
+}
+
+impl Response {
+    pub fn new(data: ResponseData) -> Response {
+        Response { data: data }
+    }
+
+    pub fn get_data(&self) -> &ResponseData {
+        &self.data
     }
 }
 
