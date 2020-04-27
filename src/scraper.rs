@@ -78,10 +78,14 @@ impl Scraper {
         old_url_str.push_str(path_map.get(new_url.as_str()).unwrap());
     }
 
-    /// Process a single URL
-    fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
-        let page = scraper.downloader.get(&url).unwrap();
-        let dom = dom::Dom::new(&page);
+    fn handle_html(
+        scraper: &Scraper,
+        transmitter: &Sender<(Url, usize)>,
+        url: &Url,
+        depth: usize,
+        data: &String,
+    ) {
+        let dom = dom::Dom::new(data);
 
         dom.find_urls_as_strings()
             .into_iter()
@@ -101,12 +105,18 @@ impl Scraper {
             });
 
         let path_map = scraper.path_map.lock().unwrap();
-
         disk::save_file(
             path_map.get(url.as_str()).unwrap(),
             &dom.serialize().as_bytes(),
             &scraper.args.output,
         );
+    }
+
+    /// Process a single URL
+    fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
+        let page = scraper.downloader.get(&url).unwrap();
+
+        Scraper::handle_html(scraper, transmitter, &url, depth, &page);
 
         scraper.visited_urls.lock().unwrap().insert(url.to_string());
 
