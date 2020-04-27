@@ -22,7 +22,7 @@ impl Downloader {
             match self.client.get(url.clone()).send() {
                 Ok(data) => return Ok(data.text().unwrap()),
                 Err(e) => {
-                    println!("Downloader.get() has encounter an error: {}", e);
+                    println!("Downloader.get() has encountered an error: {}", e);
                     error = Some(e);
                 }
             };
