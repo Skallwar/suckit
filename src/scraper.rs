@@ -104,7 +104,7 @@ impl Scraper {
 
         disk::save_file(
             path_map.get(url.as_str()).unwrap(),
-            &dom.serialize(),
+            &dom.serialize().as_bytes(),
             &scraper.args.output,
         );
 

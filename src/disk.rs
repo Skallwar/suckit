@@ -7,7 +7,7 @@ use reqwest::Url;
 const FILE_NAME_MAX_LENGTH: usize = 255;
 
 //TODO: Recover insted of panic
-pub fn save_file(file_name: &String, content: &String, path: &Option<PathBuf>) {
+pub fn save_file(file_name: &String, content: &[u8], path: &Option<PathBuf>) {
     let path = match path {
         Some(path) => path.join(file_name),
         None => PathBuf::from(file_name),
@@ -26,7 +26,7 @@ pub fn save_file(file_name: &String, content: &String, path: &Option<PathBuf>) {
         Ok(file) => file,
     };
 
-    match file.write_all(content.as_bytes()) {
+    match file.write_all(content) {
         Err(err) => panic!("Couldn't write to {}: {}", path.display(), err),
         Ok(_) => (),
     };
