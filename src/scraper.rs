@@ -112,15 +112,27 @@ impl Scraper {
         );
     }
 
+    fn handle_raw_file(scraper: &Scraper, url: &Url, data: &[u8], filename: &String) {
+        disk::save_file(filename, data, &scraper.args.output);
+
+        let path_map = scraper.path_map.lock().unwrap();
+        disk::symlink(filename, path_map.get(url.as_str()).unwrap())
+    }
+
     /// Process a single URL
     fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
-        let page = scraper.downloader.get(&url).unwrap();
+        let response = scraper.downloader.get(&url).unwrap();
 
-        match page.get_data() {
+        match response.get_data() {
             downloader::ResponseData::Html(data) => {
                 Scraper::handle_html(scraper, transmitter, &url, depth, data)
             }
-            _ => warn!("Not handled yet"),
+            downloader::ResponseData::Other(data) => Scraper::handle_raw_file(
+                scraper,
+                &url,
+                &data,
+                &response.get_filename().as_ref().unwrap(),
+            ),
         }
 
         scraper.visited_urls.lock().unwrap().insert(url.to_string());

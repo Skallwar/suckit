@@ -32,6 +32,10 @@ pub fn save_file(file_name: &String, content: &[u8], path: &Option<PathBuf>) {
     };
 }
 
+pub fn symlink(source: &String, dest: &String) {
+    std::os::unix::fs::symlink(source, dest).unwrap();
+}
+
 pub fn url_to_path(url: &Url) -> String {
     let scheme_size = url.scheme().len() + 3; // 3 = "://".len()
     let url = url.as_str();
