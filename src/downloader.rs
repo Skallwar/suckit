@@ -67,7 +67,7 @@ impl Downloader {
                         true => ResponseData::Html(data.text().unwrap()),
                         false => {
                             let mut raw_data: Vec<u8> = Vec::new();
-                            data.copy_to(&mut raw_data);
+                            data.copy_to(&mut raw_data).unwrap();
                             ResponseData::Other(raw_data)
                         }
                     };
@@ -105,8 +105,6 @@ impl Response {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_download_url() {
