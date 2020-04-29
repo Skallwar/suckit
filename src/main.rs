@@ -4,7 +4,7 @@ mod dom;
 mod downloader;
 mod logger;
 mod scraper;
-mod url;
+mod url_helper;
 
 use scraper::Scraper;
 

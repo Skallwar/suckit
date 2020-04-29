@@ -1,19 +1,18 @@
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
-use reqwest::Url;
+use url::Url;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Mutex;
 use std::time;
 
-#[cfg(not(test))] //For the "mock" at the end of file
 use super::downloader;
 
 use super::args;
 use super::disk;
 use super::dom;
-use super::url;
+use super::url_helper;
 
 use crate::info;
 
@@ -74,7 +73,7 @@ impl Scraper {
     /// Fix the URLs contained in the DOM-tree so they point to each other
     fn fix_domtree(&self, old_url_str: &mut String, new_url: &Url) {
         let path_map = self.path_map.lock().unwrap();
-        let new_url_str = url::str_percent_encode(path_map.get(new_url.as_str()).unwrap());
+        let new_url_str = url_helper::str_percent_encode(path_map.get(new_url.as_str()).unwrap());
 
         old_url_str.clear();
         old_url_str.push_str(&new_url_str);
@@ -94,7 +93,7 @@ impl Scraper {
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
                 let next_full_url = url.join(&next_url).unwrap();
-                match scraper.map_url(&next_full_url, url::url_to_path(&next_full_url)) {
+                match scraper.map_url(&next_full_url, url_helper::url_to_path(&next_full_url)) {
                     true => {
                         if depth < scraper.args.depth {
                             Scraper::push(transmitter, next_full_url.clone(), depth + 1);
@@ -151,7 +150,10 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
-        self.map_url(&self.args.origin, url::url_to_path(&self.args.origin));
+        self.map_url(
+            &self.args.origin,
+            url_helper::url_to_path(&self.args.origin),
+        );
         Scraper::push(&self.transmitter, self.args.origin.clone(), 0);
 
         thread::scope(|thread_scope| {
@@ -218,118 +220,5 @@ mod tests {
         };
 
         let _ = Scraper::new(args);
-    }
-
-    #[test]
-    fn run() {
-        let args = args::Args {
-            origin: Url::parse("https://fake_start.net/").unwrap(),
-            output: Some(PathBuf::from("/tmp")),
-            jobs: 1,
-            tries: 1,
-            depth: 5,
-            verbose: true,
-        };
-
-        let mut s = Scraper::new(args);
-
-        s.run();
-
-        let visited_urls = s.visited_urls.lock().unwrap();
-
-        assert!(!visited_urls.contains("https://example.net"));
-        assert!(!visited_urls.contains("https://no-no-no.com"));
-        assert!(visited_urls.contains("https://fake_start.net/a_file"));
-        assert!(visited_urls.contains("https://fake_start.net/dir/nested/file"));
-        assert!(visited_urls.contains("https://fake_start.net/an_answer_file"));
-    }
-
-    #[test]
-    fn depth() {
-        let args = args::Args {
-            origin: Url::parse("https://fake_start.net/").unwrap(),
-            output: Some(PathBuf::from("/tmp")),
-            jobs: 1,
-            tries: 1,
-            depth: 0,
-            verbose: true,
-        };
-        let mut s = Scraper::new(args);
-
-        s.run();
-
-        let visited_urls = s.visited_urls.lock().unwrap();
-
-        assert!(!visited_urls.contains("https://example.net"));
-        assert!(!visited_urls.contains("https://no-no-no.com"));
-        assert!(!visited_urls.contains("https://fake_start.net/a_file"));
-        assert!(!visited_urls.contains("https://fake_start.net/an_answer_file"));
-        assert!(!visited_urls.contains("https://fake_start.net/dir/nested/file"));
-    }
-
-    #[test]
-    fn depth_tricky() {
-        let args = args::Args {
-            origin: Url::parse("https://fake_start.net/").unwrap(),
-            output: Some(PathBuf::from("/tmp")),
-            jobs: 1,
-            tries: 1,
-            depth: 1,
-            verbose: true,
-        };
-        let mut s = Scraper::new(args);
-
-        s.run();
-
-        let visited_urls = s.visited_urls.lock().unwrap();
-
-        assert!(visited_urls.contains("https://fake_start.net/a_file"));
-        assert!(visited_urls.contains("https://fake_start.net/dir/nested/file"));
-        assert!(!visited_urls.contains("https://fake_start.net/an_answer_file"));
-    }
-}
-
-#[cfg(test)]
-mod downloader {
-    static TEST_BEG: &str = "<!DOCTYPE html>
-<html>
-    <body>
-        <p>Absolute<a href=\"https://no-no-no.com\"></a></p>
-        <p>Relative<a href=\"a_file\"></a></p>
-        <p>Relative nested<a href=\"dir/nested/file\"></a></p>
-    </body>
-</html>
-";
-
-    static TEST_ANS: &str = "<!DOCTYPE html>
-<html>
-    <body>
-        <p>Relative<a href=\"an_answer_file\"></a></p>
-    </body>
-</html>
-";
-
-    pub struct Downloader {}
-
-    impl Downloader {
-        pub fn new(_tries: usize) -> Downloader {
-            Downloader {}
-        }
-
-        pub fn get(&self, url: &reqwest::Url) -> Result<String, reqwest::Error> {
-            let mut res = String::from("");
-
-            match url.as_str() == "https://fake_start.net/" {
-                true => res = String::from(TEST_BEG),
-                false => {}
-            }
-
-            match url.as_str() == "https://fake_start.net/a_file" {
-                true => res = String::from(TEST_ANS),
-                false => {}
-            }
-
-            Ok(res)
-        }
     }
 }
