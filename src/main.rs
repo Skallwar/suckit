@@ -2,8 +2,8 @@ mod args;
 mod disk;
 mod dom;
 mod downloader;
-mod scraper;
 mod logger;
+mod scraper;
 
 use scraper::Scraper;
 
@@ -13,5 +13,4 @@ fn main() {
     let mut scraper = Scraper::new(args);
 
     scraper.run();
-
 }

@@ -1,9 +1,11 @@
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
 use reqwest::Url;
+use serde::{Deserialize, Serialize, Serializer};
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::vec::Vec;
 use std::sync::Mutex;
 use std::time;
 
@@ -41,7 +43,7 @@ impl Scraper {
 
         Scraper {
             downloader: downloader::Downloader::new(args.tries),
-            args: args,
+            args,
             transmitter: tx,
             receiver: rx,
             visited_urls: Mutex::new(HashSet::new()),
@@ -165,6 +167,23 @@ impl Scraper {
              * be handled during the join() call in run() */
             Err(_) => true,
         }
+    }
+}
+
+impl Serialize for Scraper {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let path_map = self.path_map.lock().unwrap();
+
+        let visited_urls: Vec<&String> = self.visited_urls
+            .lock()
+            .unwrap()
+            .iter()
+            .collect();
+
+        serializer.collect_map(path_map.iter())
     }
 }
 
