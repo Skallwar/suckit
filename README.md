@@ -33,6 +33,8 @@ A common use case could be the following:
 
 `suckit http://books.toscrape.com -j 8 -o /path/to/downloaded/pages/`
 
+[![asciicast](https://asciinema.org/a/17XpBXaZhpIX41w7nRF6i3M9y.svg)](https://asciinema.org/a/17XpBXaZhpIX41w7nRF6i3M9y)
+
 __Want to contribute ? Feel free to
 [open an issue](https://github.com/Skallwar/suckit/issues/new) or
 [submit a PR](https://github.com/Skallwar/suckit/compare) !__
