@@ -23,9 +23,9 @@ impl Downloader {
         content_type.contains("text/html")
     }
 
-    fn get_filename(content_disposition: &String) -> String {
-        let content_disposition = content_disposition.clone();
-        let index = content_disposition.find("=").unwrap() + 1;
+    fn get_filename(content_disposition: &str) -> String {
+        let content_disposition = content_disposition.to_string();
+        let index = content_disposition.find('=').unwrap() + 1;
 
         content_disposition[index..].to_string()
     }
@@ -54,17 +54,17 @@ impl Downloader {
                         }
                     };
 
-                    let data = match Downloader::is_html(&data_type) {
-                        true => ResponseData::Html(data.text().unwrap()),
-                        false => {
-                            let mut raw_data: Vec<u8> = Vec::new();
-                            data.copy_to(&mut raw_data).unwrap();
-                            ResponseData::Other(raw_data)
-                        }
+                    let data = if Downloader::is_html(&data_type) {
+                        ResponseData::Html(data.text().unwrap())
+                    } else {
+                        let mut raw_data: Vec<u8> = Vec::new();
+                        data.copy_to(&mut raw_data).unwrap();
+                        ResponseData::Other(raw_data)
                     };
 
                     return Ok(Response::new(data, filename));
                 }
+
                 Err(e) => {
                     println!("Downloader.get() has encountered an error: {}", e);
                     error = Some(e);
@@ -72,7 +72,7 @@ impl Downloader {
             };
         }
 
-        return Err(error.unwrap());
+        Err(error.unwrap())
     }
 }
 

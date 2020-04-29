@@ -1,10 +1,9 @@
-use colored::*;
 use chrono::Local;
+use colored::*;
 
 /// Write a message using the following format
 /// <time>: [<header>] <message>
-pub struct Logger {
-}
+pub struct Logger {}
 
 // Allow the dead code in case we don't use all the macros. Using it here means
 // it doesn't affect the other modules in the crate
@@ -16,7 +15,7 @@ impl Logger {
     }
 
     /// Write a log message to stdout
-    fn write_log(header: ColoredString, message: &String) {
+    fn write_log(header: ColoredString, message: &str) {
         // Sadly we can't use a static format litteral so we have to retype
         // this for every function...
         println!("{}: [{}] {}", Logger::get_timestamp(), header, message);
@@ -34,7 +33,12 @@ impl Logger {
 
     /// Display an ERROR message
     pub fn error(message: String) {
-        eprintln!("{}: [{}] {}", Logger::get_timestamp(), "ERROR".red(), message);
+        eprintln!(
+            "{}: [{}] {}",
+            Logger::get_timestamp(),
+            "ERROR".red(),
+            message
+        );
     }
 }
 

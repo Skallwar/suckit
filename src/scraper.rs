@@ -54,12 +54,11 @@ impl Scraper {
     fn map_url(&self, url: &Url, path: String) -> bool {
         let mut path_map = self.path_map.lock().unwrap();
 
-        match path_map.contains_key(url.as_str()) {
-            false => {
-                path_map.insert(url.to_string(), path);
-                true
-            }
-            true => false,
+        if !path_map.contains_key(url.as_str()) {
+            path_map.insert(url.to_string(), path);
+            true
+        } else {
+            false
         }
     }
 
@@ -94,14 +93,11 @@ impl Scraper {
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
                 let next_full_url = url.join(&next_url).unwrap();
-                match scraper.map_url(&next_full_url, url_helper::url_to_path(&next_full_url)) {
-                    true => {
-                        if depth < scraper.args.depth {
-                            Scraper::push(transmitter, next_full_url.clone(), depth + 1);
-                        }
-                    }
-                    false => (),
-                };
+                if scraper.map_url(&next_full_url, url_helper::url_to_path(&next_full_url))
+                    && depth < scraper.args.depth
+                {
+                    Scraper::push(transmitter, next_full_url.clone(), depth + 1);
+                }
 
                 scraper.fix_domtree(next_url, &next_full_url);
             });
