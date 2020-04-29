@@ -31,7 +31,7 @@ A common use case could be the following:
 
 `suckit http://books.toscrape.com -j 8 -o /path/to/downloaded/pages/`
 
-[![asciicast](https://asciinema.org/a/17XpBXaZhpIX41w7nRF6i3M9y.svg)](https://asciinema.org/a/17XpBXaZhpIX41w7nRF6i3M9y)
+<script id="asciicast-17XpBXaZhpIX41w7nRF6i3M9y" src="https://asciinema.org/a/17XpBXaZhpIX41w7nRF6i3M9y.js" async></script>
 
 __Want to contribute ? Feel free to
 [open an issue](https://github.com/Skallwar/suckit/issues/new) or
