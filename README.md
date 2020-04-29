@@ -5,6 +5,8 @@
 `SuckIT` allows you to recursively visit and download a website's content to
 your disk.
 
+![SuckIT Logo](suckit_logo.png)
+
 # Features
 
 * [x] Vacuums the entirety of a website recursively
