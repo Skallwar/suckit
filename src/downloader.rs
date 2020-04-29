@@ -15,7 +15,7 @@ impl Downloader {
                 .cookie_store(true)
                 .build()
                 .unwrap(),
-            tries: tries,
+            tries,
         }
     }
 

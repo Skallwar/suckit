@@ -42,7 +42,7 @@ impl Scraper {
 
         Scraper {
             downloader: downloader::Downloader::new(args.tries),
-            args: args,
+            args,
             transmitter: tx,
             receiver: rx,
             visited_urls: Mutex::new(HashSet::new()),
