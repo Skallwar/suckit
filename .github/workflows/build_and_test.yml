@@ -1,4 +1,4 @@
-name: SuckIT Unit Tests CI
+name: Build and test
 
 on:
   pull_request:
@@ -10,7 +10,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -19,6 +18,12 @@ jobs:
       run: |
           cargo build
 
+  tests:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v2
     - name: Run unit tests
       run: |
           cargo test
