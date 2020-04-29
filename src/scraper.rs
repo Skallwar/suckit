@@ -13,6 +13,7 @@ use super::args;
 use super::disk;
 use super::dom;
 use super::url_helper;
+use super::response;
 
 use crate::info;
 
@@ -113,10 +114,10 @@ impl Scraper {
         let response = scraper.downloader.get(&url).unwrap();
 
         let data = match response.get_data() {
-            downloader::ResponseData::Html(data) => {
+            response::ResponseData::Html(data) => {
                 Scraper::handle_html(scraper, transmitter, &url, depth, data)
             }
-            downloader::ResponseData::Other(data) => data.to_vec(),
+            response::ResponseData::Other(data) => data.to_vec(),
         };
 
         match response.get_filename() {

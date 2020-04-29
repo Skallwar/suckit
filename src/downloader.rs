@@ -1,19 +1,10 @@
 use url::Url;
+use super::response::{Response, ResponseData};
 
 /// Wrapper around a reqwest client, used to get the content of web pages
 pub struct Downloader {
     client: reqwest::blocking::Client,
     tries: usize,
-}
-
-pub enum ResponseData {
-    Html(String),
-    Other(Vec<u8>),
-}
-
-pub struct Response {
-    data: ResponseData,
-    filename: Option<String>,
 }
 
 impl Downloader {
@@ -82,23 +73,6 @@ impl Downloader {
         }
 
         return Err(error.unwrap());
-    }
-}
-
-impl Response {
-    pub fn new(data: ResponseData, filename: Option<String>) -> Response {
-        Response {
-            data: data,
-            filename: filename,
-        }
-    }
-
-    pub fn get_data(&self) -> &ResponseData {
-        &self.data
-    }
-
-    pub fn get_filename(&self) -> &Option<String> {
-        &self.filename
     }
 }
 
