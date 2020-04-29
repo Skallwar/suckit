@@ -1,4 +1,4 @@
-![](https://github.com/Skallwar/suckit/workflows/SuckIT%20Unit%20Tests%20CI/badge.svg)
+![Build and test](https://github.com/Skallwar/suckit/workflows/Build%20and%20test/badge.svg)
 
 # SuckIT
 
