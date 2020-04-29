@@ -4,8 +4,6 @@ use std::path::PathBuf;
 
 use reqwest::Url;
 
-const FILE_NAME_MAX_LENGTH: usize = 255;
-
 //TODO: Recover insted of panic
 pub fn save_file(file_name: &String, content: &[u8], path: &Option<PathBuf>) {
     let path = match path {
@@ -32,22 +30,13 @@ pub fn save_file(file_name: &String, content: &[u8], path: &Option<PathBuf>) {
     };
 }
 
-pub fn symlink(source: &String, dest: &String) {
-    std::os::unix::fs::symlink(source, dest).unwrap();
-}
+pub fn symlink(source: &String, destination: &String, path: &Option<PathBuf>) {
+    let destination = match path {
+        Some(path) => path.join(destination),
+        None => PathBuf::from(destination),
+    };
 
-pub fn url_to_path(url: &Url) -> String {
-    let scheme_size = url.scheme().len() + 3; // 3 = "://".len()
-    let url = url.as_str();
-
-    let mut url = url.replace('/', "_").replace('.', "_");
-    url.replace_range(0..scheme_size, ""); //Strip scheme
-    if url.len() >= FILE_NAME_MAX_LENGTH {
-        url.replace_range(FILE_NAME_MAX_LENGTH.., ""); //Shrink too long file name
-    }
-    let url = url.trim_end_matches('_'); //Remaining '/'
-
-    return url.to_string();
+    std::os::unix::fs::symlink(source, destination).unwrap();
 }
 
 #[cfg(test)]

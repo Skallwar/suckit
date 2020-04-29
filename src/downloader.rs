@@ -20,7 +20,10 @@ impl Downloader {
     /// Create a new Downloader
     pub fn new(tries: usize) -> Downloader {
         Downloader {
-            client: reqwest::blocking::Client::new(),
+            client: reqwest::blocking::ClientBuilder::new()
+                .cookie_store(true)
+                .build()
+                .unwrap(),
             tries: tries,
         }
     }
@@ -42,26 +45,22 @@ impl Downloader {
         for _ in 0..self.tries {
             match self.client.get(url.clone()).send() {
                 Ok(mut data) => {
-                    let data_type = data
-                        .headers()
-                        .get("content-type")
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .to_string();
+                    let data_type = match data.headers().get("content-type") {
+                        Some(data_type) => data_type.to_str().unwrap().to_string(),
+                        None => "text/html".to_string(),
+                    };
 
                     let filename = if Downloader::is_html(&data_type) {
                         None
                     } else {
-                        let content_disposition = data
-                            .headers()
-                            .get("content-disposition")
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .to_string();
-
-                        Some(Downloader::get_filename(&content_disposition))
+                        match data.headers().get("content-disposition") {
+                            Some(content_disposition) => {
+                                let content_disposition =
+                                    content_disposition.to_str().unwrap().to_string();
+                                Some(Downloader::get_filename(&content_disposition))
+                            }
+                            None => None,
+                        }
                     };
 
                     let data = match Downloader::is_html(&data_type) {

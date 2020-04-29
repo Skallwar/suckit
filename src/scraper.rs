@@ -13,8 +13,9 @@ use super::downloader;
 use super::args;
 use super::disk;
 use super::dom;
+use super::url;
 
-use crate::{info, warn};
+use crate::info;
 
 /// Maximum number of empty recv() from the channel
 static MAX_EMPTY_RECEIVES: usize = 10;
@@ -73,9 +74,10 @@ impl Scraper {
     /// Fix the URLs contained in the DOM-tree so they point to each other
     fn fix_domtree(&self, old_url_str: &mut String, new_url: &Url) {
         let path_map = self.path_map.lock().unwrap();
+        let new_url_str = url::str_percent_encode(path_map.get(new_url.as_str()).unwrap());
 
         old_url_str.clear();
-        old_url_str.push_str(path_map.get(new_url.as_str()).unwrap());
+        old_url_str.push_str(&new_url_str);
     }
 
     fn handle_html(
@@ -84,7 +86,7 @@ impl Scraper {
         url: &Url,
         depth: usize,
         data: &str,
-    ) {
+    ) -> Vec<u8> {
         let dom = dom::Dom::new(data);
 
         dom.find_urls_as_strings()
@@ -92,7 +94,7 @@ impl Scraper {
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
                 let next_full_url = url.join(&next_url).unwrap();
-                match scraper.map_url(&next_full_url, disk::url_to_path(&next_full_url)) {
+                match scraper.map_url(&next_full_url, url::url_to_path(&next_full_url)) {
                     true => {
                         if depth < scraper.args.depth {
                             Scraper::push(transmitter, next_full_url.clone(), depth + 1);
@@ -104,35 +106,39 @@ impl Scraper {
                 scraper.fix_domtree(next_url, &next_full_url);
             });
 
-        let path_map = scraper.path_map.lock().unwrap();
-        disk::save_file(
-            path_map.get(url.as_str()).unwrap(),
-            &dom.serialize().as_bytes(),
-            &scraper.args.output,
-        );
-    }
-
-    fn handle_raw_file(scraper: &Scraper, url: &Url, data: &[u8], filename: &String) {
-        disk::save_file(filename, data, &scraper.args.output);
-
-        let path_map = scraper.path_map.lock().unwrap();
-        disk::symlink(filename, path_map.get(url.as_str()).unwrap())
+        dom.serialize().into_bytes()
     }
 
     /// Process a single URL
     fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
         let response = scraper.downloader.get(&url).unwrap();
 
-        match response.get_data() {
+        let data = match response.get_data() {
             downloader::ResponseData::Html(data) => {
                 Scraper::handle_html(scraper, transmitter, &url, depth, data)
             }
-            downloader::ResponseData::Other(data) => Scraper::handle_raw_file(
-                scraper,
-                &url,
-                &data,
-                &response.get_filename().as_ref().unwrap(),
-            ),
+            downloader::ResponseData::Other(data) => data.to_vec(),
+        };
+
+        match response.get_filename() {
+            Some(filename) => {
+                disk::save_file(filename, &data, &scraper.args.output);
+
+                let path_map = scraper.path_map.lock().unwrap();
+                disk::symlink(
+                    filename,
+                    path_map.get(url.as_str()).unwrap(),
+                    &scraper.args.output,
+                );
+            }
+            None => {
+                let path_map = scraper.path_map.lock().unwrap();
+                disk::save_file(
+                    path_map.get(url.as_str()).unwrap(),
+                    &data,
+                    &scraper.args.output,
+                );
+            }
         }
 
         scraper.visited_urls.lock().unwrap().insert(url.to_string());
@@ -145,7 +151,7 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
-        self.map_url(&self.args.origin, disk::url_to_path(&self.args.origin));
+        self.map_url(&self.args.origin, url::url_to_path(&self.args.origin));
         Scraper::push(&self.transmitter, self.args.origin.clone(), 0);
 
         thread::scope(|thread_scope| {
