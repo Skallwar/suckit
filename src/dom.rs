@@ -17,12 +17,11 @@ impl Dom {
     pub fn serialize(&self) -> String {
         let mut vec: Vec<u8> = Vec::new();
 
-        match self.tree.serialize(&mut vec) {
-            Err(err) => panic!("Couldn't serialize domtree: {}", err),
-            Ok(_) => (),
+        if let Err(err) = self.tree.serialize(&mut vec) {
+            panic!("Couldn't serialize domtree: {}", err)
         }
 
-        return String::from_utf8(vec).unwrap();
+        String::from_utf8(vec).unwrap()
     }
 
     pub fn find_urls_as_strings(&self) -> Vec<&mut String> {
@@ -39,14 +38,15 @@ impl Dom {
             //TODO: Prettify this, we may need more than src and href in the futur
             match unsafe { (*attributes).get_mut("src") } {
                 Some(url) => vec.push(url),
-                None => match unsafe { (*attributes).get_mut("href") } {
-                    Some(url) => vec.push(url),
-                    None => (),
-                },
+                None => {
+                    if let Some(url) = unsafe { (*attributes).get_mut("href") } {
+                        vec.push(url)
+                    }
+                }
             }
         }
 
-        return vec;
+        vec
     }
 }
 

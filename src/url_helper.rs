@@ -25,7 +25,7 @@ pub fn url_to_path(url: &Url) -> String {
     }
     let url = url.trim_end_matches('_'); //Remaining '/'
 
-    return url.to_string();
+    url.to_string()
 }
 
 #[cfg(test)]
