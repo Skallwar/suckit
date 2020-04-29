@@ -20,10 +20,6 @@ impl Dom {
         if let Err(err) = self.tree.serialize(&mut vec) {
             panic!("Couldn't serialize domtree: {}", err)
         }
-        // self.tree.serialize(&mut vec) {
-        //     Err(err) => panic!("Couldn't serialize domtree: {}", err),
-        //     Ok(_) => (),
-        // }
 
         String::from_utf8(vec).unwrap()
     }

@@ -15,13 +15,6 @@ pub fn save_file(file_name: &str, content: &[u8], path: &Option<PathBuf>) {
             Ok(()) => (),
         }
     }
-    // match path.parent() {
-    //     Some(parent) => match fs::create_dir_all(parent) {
-    //         Err(err) => panic!("Couldn't create folder {}: {}", parent.display(), err),
-    //         Ok(()) => (),
-    //     },
-    //     None => (),
-    // }
 
     let mut file = match fs::File::create(&path) {
         Err(err) => panic!("Couldn't create {}: {}", path.display(), err),
@@ -31,10 +24,6 @@ pub fn save_file(file_name: &str, content: &[u8], path: &Option<PathBuf>) {
     if let Err(err) = file.write_all(content) {
         panic!("Couldn't write to {}: {}", path.display(), err);
     }
-    // match file.write_all(content) {
-    //     Err(err) => panic!("Couldn't write to {}: {}", path.display(), err),
-    //     Ok(_) => (),
-    // };
 }
 
 pub fn symlink(source: &str, destination: &str, path: &Option<PathBuf>) {
