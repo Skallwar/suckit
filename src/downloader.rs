@@ -75,7 +75,7 @@ impl Downloader {
                     return Ok(Response::new(data, filename));
                 }
                 Err(e) => {
-                    println!("Downloader.get() has encounter an error: {}", e);
+                    println!("Downloader.get() has encountered an error: {}", e);
                     error = Some(e);
                 }
             };
