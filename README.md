@@ -41,7 +41,7 @@ __Want to contribute ? Feel free to
 
 # License
 
-Rust is primarily distributed under the terms of both the MIT license
+SuckIT is primarily distributed under the terms of both the MIT license
 and the Apache License (Version 2.0), with portions covered by various
 BSD-like licenses.
 
