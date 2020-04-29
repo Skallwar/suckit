@@ -27,4 +27,4 @@ your disk.
 
 A common use case could be the following:
 
-`suckit http://books.toscrape.com -j 8 -o /path/to/downloaded/pages/
+`suckit http://books.toscrape.com -j 8 -o /path/to/downloaded/pages/`
