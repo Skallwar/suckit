@@ -7,10 +7,12 @@ your disk.
 
 # Features
 
-* [x] Vacuum the entirety of a website recursively
-* [x] Use multithreading
-* [x] Write the website's content to your disk
-* [x] Offline navigation
+* [x] Vacuums the entirety of a website recursively
+* [x] Uses multithreading
+* [x] Writes the website's content to your disk
+* [x] Enables offline navigation
+* [ ] Saves application state on CTRL-C for later pickup
+* [ ] Offers random delays to avoid IP banning
 
 # Options
 
@@ -28,3 +30,7 @@ your disk.
 A common use case could be the following:
 
 `suckit http://books.toscrape.com -j 8 -o /path/to/downloaded/pages/`
+
+__Want to contribute ? Feel free to
+[open an issue](https://github.com/Skallwar/suckit/issues/new) or
+[submit a PR](https://github.com/Skallwar/suckit/compare) !__
