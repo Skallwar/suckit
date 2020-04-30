@@ -3,7 +3,7 @@ use url::Url;
 
 use crate::warn;
 
-/// Wrapper around a reqwest client, used to get the content of web pages
+///A Downloader to download web content
 pub struct Downloader {
     client: reqwest::blocking::Client,
     tries: usize,
@@ -21,6 +21,7 @@ impl Downloader {
         }
     }
 
+    ///Check if the type in the 'content-type' head field is html
     fn is_html(content_type: &str) -> bool {
         content_type.contains("text/html")
     }
@@ -37,6 +38,7 @@ impl Downloader {
         }
     }
 
+    ///Download the content at this url
     fn make_request(&self, url: &Url) -> Result<Response, reqwest::Error> {
         match self.client.get(url.clone()).send() {
             Ok(mut data) => {
@@ -69,7 +71,7 @@ impl Downloader {
         }
     }
 
-    /// Download the content located at a given URL
+    ///Download the content of an url and retries at most 'tries' times on failure
     pub fn get(&self, url: &Url) -> Result<Response, reqwest::Error> {
         let mut error: Option<reqwest::Error> = None;
         for _ in 0..self.tries {

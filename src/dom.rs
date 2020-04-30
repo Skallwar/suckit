@@ -13,12 +13,14 @@ pub struct Dom {
 }
 
 impl Dom {
+    ///Create a new dom tree
     pub fn new(str: &str) -> Dom {
         Dom {
             tree: kuchiki::parse_html().one(str),
         }
     }
 
+    ///Serialize the dom tree
     pub fn serialize(&self) -> String {
         let mut vec: Vec<u8> = Vec::new();
 
@@ -29,6 +31,7 @@ impl Dom {
         String::from_utf8(vec).unwrap()
     }
 
+    ///Returns all urls in the dom tree
     pub fn find_urls_as_strings(&self) -> Vec<&mut String> {
         let mut vec: Vec<&mut String> = Vec::new();
 

@@ -80,6 +80,7 @@ impl Scraper {
         old_url_str.push_str(&new_url_str);
     }
 
+    ///Proces an html file: add new url to the chanel and prepare for offline navigation
     fn handle_html(
         scraper: &Scraper,
         transmitter: &Sender<(Url, usize)>,
