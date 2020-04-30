@@ -22,7 +22,7 @@ pub struct Args {
     #[structopt(short, long, default_value = "5")]
     pub depth: usize,
 
-    ///Number of retries when download of a page fails
+    ///Number of retries when downloading a page fails
     #[structopt(short, long, default_value = "20")]
     pub tries: usize,
 
