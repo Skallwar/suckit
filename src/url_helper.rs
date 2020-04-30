@@ -1,17 +1,11 @@
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
-use url::{ParseError, Url};
+use url::Url;
 
 const FILE_NAME_MAX_LENGTH: usize = 255;
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b'?');
 
-pub fn str_percent_encode(path: &str) -> String {
+pub fn encode(path: &str) -> String {
     utf8_percent_encode(path, FRAGMENT).to_string()
-}
-
-pub fn str_to_url(path: &str) -> Result<Url, ParseError> {
-    let path = str_percent_encode(path);
-
-    Url::parse(&path)
 }
 
 pub fn url_to_path(url: &Url) -> String {

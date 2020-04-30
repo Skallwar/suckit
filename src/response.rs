@@ -6,23 +6,12 @@ pub enum ResponseData {
 
 /// Wrapper around `ResponseData`
 pub struct Response {
-    data: ResponseData,
-    filename: Option<String>,
+    pub data: ResponseData,
+    pub filename: Option<String>,
 }
 
 impl Response {
     pub fn new(data: ResponseData, filename: Option<String>) -> Response {
-        Response {
-            data,
-            filename,
-        }
-    }
-
-    pub fn get_data(&self) -> &ResponseData {
-        &self.data
-    }
-
-    pub fn get_filename(&self) -> &Option<String> {
-        &self.filename
+        Response { data, filename }
     }
 }

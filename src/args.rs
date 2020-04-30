@@ -3,11 +3,9 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use url::Url;
 
-use super::url_helper;
-
 #[derive(Debug, StructOpt)]
 pub struct Args {
-    #[structopt(name = "url", parse(try_from_str = url_helper::str_to_url))]
+    #[structopt(name = "url", parse(try_from_str))]
     pub origin: Url,
 
     #[structopt(short, long, parse(from_os_str))]
