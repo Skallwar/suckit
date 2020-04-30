@@ -5,6 +5,7 @@ mod downloader;
 mod logger;
 mod scraper;
 mod url_helper;
+mod response;
 
 use scraper::Scraper;
 
