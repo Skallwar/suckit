@@ -3,7 +3,7 @@ use url::Url;
 
 ///Max file name size supported by the file system
 const FILE_NAME_MAX_LENGTH: usize = 255;
-///Characters that need to be replace by encode
+///Characters that need to be replaced by encode()
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b'?');
 
 ///Encode special character with '%' representation
