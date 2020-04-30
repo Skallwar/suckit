@@ -2,6 +2,11 @@ use std::ops::Deref;
 
 use kuchiki::traits::*;
 
+use crate::error;
+
+static CSS_SELECTORS: &str = "[src],[href]";
+static CSS_ATTRIBUTES: [&str; 2] = ["src", "href"];
+
 ///Struct containing a dom tree of a web page
 pub struct Dom {
     tree: kuchiki::NodeRef,
@@ -18,7 +23,7 @@ impl Dom {
         let mut vec: Vec<u8> = Vec::new();
 
         if let Err(err) = self.tree.serialize(&mut vec) {
-            panic!("Couldn't serialize domtree: {}", err)
+            error!("Couldn't serialize domtree: {}", err)
         }
 
         String::from_utf8(vec).unwrap()
@@ -27,21 +32,16 @@ impl Dom {
     pub fn find_urls_as_strings(&self) -> Vec<&mut String> {
         let mut vec: Vec<&mut String> = Vec::new();
 
-        let nodes = match self.tree.select("[src],[href]") {
+        let nodes = match self.tree.select(CSS_SELECTORS) {
             Ok(nodes) => nodes,
             Err(_) => return vec,
         };
 
         for node in nodes {
             let attributes = node.deref().attributes.as_ptr();
-
-            //TODO: Prettify this, we may need more than src and href in the futur
-            match unsafe { (*attributes).get_mut("src") } {
-                Some(url) => vec.push(url),
-                None => {
-                    if let Some(url) = unsafe { (*attributes).get_mut("href") } {
-                        vec.push(url)
-                    }
+            for attribute in CSS_ATTRIBUTES.iter() {
+                if let Some(url) = unsafe { (*attributes).get_mut(*attribute) } {
+                    vec.push(url);
                 }
             }
         }

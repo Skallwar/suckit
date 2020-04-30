@@ -1,7 +1,7 @@
 use super::response::{Response, ResponseData};
 use url::Url;
 
-use crate::error;
+use crate::warn;
 
 /// Wrapper around a reqwest client, used to get the content of web pages
 pub struct Downloader {
@@ -63,7 +63,7 @@ impl Downloader {
             }
 
             Err(e) => {
-                error!("Downloader.get() has encountered an error: {}", e);
+                warn!("Downloader.get() has encountered an error: {}", e);
                 Err(e)
             }
         }

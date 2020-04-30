@@ -64,13 +64,9 @@ impl Scraper {
 
     /// Push a new URL into the channel
     fn push(transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
-        match transmitter.send((url, depth)) {
-            Ok(_) => (),
-            Err(e) => {
-                error!("Couldn't push to channel ! {}", e);
-                panic!("{}", e);
-            }
-        };
+        if let Err(e) = transmitter.send((url, depth)) {
+            error!("Couldn't push to channel ! {}", e);
+        }
     }
 
     /// Fix the URLs contained in the DOM-tree so they point to each other
@@ -98,7 +94,7 @@ impl Scraper {
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
                 let next_full_url = url.join(&next_url).unwrap();
-                let path = url_helper::url_to_path(&next_full_url);
+                let path = url_helper::to_path(&next_full_url);
 
                 if scraper.map_url_path(&next_full_url, path) && depth < scraper.args.depth {
                     Scraper::push(transmitter, next_full_url.clone(), depth + 1);
@@ -147,10 +143,7 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
-        self.map_url_path(
-            &self.args.origin,
-            url_helper::url_to_path(&self.args.origin),
-        );
+        self.map_url_path(&self.args.origin, url_helper::to_path(&self.args.origin));
         Scraper::push(&self.transmitter, self.args.origin.clone(), 0);
 
         thread::scope(|thread_scope| {

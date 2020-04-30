@@ -32,13 +32,14 @@ impl Logger {
     }
 
     /// Display an ERROR message
-    pub fn error(message: String) {
+    pub fn error(message: String) -> ! {
         eprintln!(
             "{}: [{}] {}",
             Logger::get_timestamp(),
             "ERROR".red(),
             message
         );
+        panic!(message)
     }
 }
 
