@@ -71,7 +71,7 @@ impl Downloader {
         }
     }
 
-    ///Download the content of an url an retires 'tries' times on failure
+    ///Download the content of an url and retries at most 'tries' times on failure
     pub fn get(&self, url: &Url) -> Result<Response, reqwest::Error> {
         let mut error: Option<reqwest::Error> = None;
         for _ in 0..self.tries {
