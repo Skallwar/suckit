@@ -11,7 +11,7 @@ pub fn encode(path: &str) -> String {
     utf8_percent_encode(path, FRAGMENT).to_string()
 }
 
-///Convert a str to an Url
+///Convert an Url to the corresponding path
 pub fn to_path(url: &Url) -> String {
     let url = url.as_str().split("://").collect::<Vec<&str>>()[1];
 
