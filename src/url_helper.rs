@@ -4,16 +4,19 @@ use url::{ParseError, Url};
 const FILE_NAME_MAX_LENGTH: usize = 255;
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b'?');
 
+///Encode special character with '%' representation
 pub fn str_percent_encode(path: &str) -> String {
     utf8_percent_encode(path, FRAGMENT).to_string()
 }
 
+///Convert a str to an Url
 pub fn str_to_url(path: &str) -> Result<Url, ParseError> {
     let path = str_percent_encode(path);
 
     Url::parse(&path)
 }
 
+///Convert an url to a path
 pub fn url_to_path(url: &Url) -> String {
     let scheme_size = url.scheme().len() + 3; // 3 = "://".len()
     let url = url.as_str();

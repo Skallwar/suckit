@@ -1,6 +1,6 @@
 use url::Url;
 
-/// Wrapper around a reqwest client, used to get the content of web pages
+///A Downloader to download web content
 pub struct Downloader {
     client: reqwest::blocking::Client,
     tries: usize,
@@ -28,6 +28,7 @@ impl Downloader {
         }
     }
 
+    ///Check if the type in the 'content-type' head field is html
     fn is_html(content_type: &str) -> bool {
         content_type.contains("text/html")
     }
