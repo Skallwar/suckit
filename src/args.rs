@@ -3,13 +3,11 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use url::Url;
 
-use super::url_helper;
-
 ///CLI arguments
 #[derive(Debug, StructOpt)]
 pub struct Args {
     ///Entry point of scraping
-    #[structopt(name = "url", parse(try_from_str = url_helper::str_to_url))]
+    #[structopt(name = "url", parse(try_from_str))]
     pub origin: Url,
 
     ///Output directory

@@ -2,7 +2,8 @@ use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 
-//TODO: Recover insted of panic
+use crate::{error, warn};
+
 ///Save content in a file
 pub fn save_file(file_name: &str, content: &[u8], path: &Option<PathBuf>) {
     let path = match path {
@@ -12,18 +13,20 @@ pub fn save_file(file_name: &str, content: &[u8], path: &Option<PathBuf>) {
 
     if let Some(parent) = path.parent() {
         match fs::create_dir_all(parent) {
-            Err(err) => panic!("Couldn't create folder {}: {}", parent.display(), err),
+            Err(err) => {
+                error!("Couldn't create folder {}: {}", parent.display(), err);
+            }
             Ok(()) => (),
         }
     }
 
     let mut file = match fs::File::create(&path) {
-        Err(err) => panic!("Couldn't create {}: {}", path.display(), err),
+        Err(err) => error!("Couldn't create {}: {}", path.display(), err),
         Ok(file) => file,
     };
 
     if let Err(err) = file.write_all(content) {
-        panic!("Couldn't write to {}: {}", path.display(), err);
+        error!("Couldn't write to {}: {}", path.display(), err);
     }
 }
 
@@ -34,5 +37,11 @@ pub fn symlink(source: &str, destination: &str, path: &Option<PathBuf>) {
         None => PathBuf::from(destination),
     };
 
-    std::os::unix::fs::symlink(source, destination).unwrap();
+    if let Err(_) = std::os::unix::fs::symlink(source, &destination) {
+        warn!(
+            "{} is already present, coulnd't create a symlink to {}",
+            destination.display(),
+            source,
+        );
+    }
 }

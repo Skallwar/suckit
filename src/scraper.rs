@@ -12,9 +12,10 @@ use super::downloader;
 use super::args;
 use super::disk;
 use super::dom;
+use super::response;
 use super::url_helper;
 
-use crate::info;
+use crate::{error, info};
 
 /// Maximum number of empty recv() from the channel
 static MAX_EMPTY_RECEIVES: usize = 10;
@@ -49,8 +50,8 @@ impl Scraper {
         }
     }
 
-    /// Add an URL to the path_map HashMap
-    fn map_url(&self, url: &Url, path: String) -> bool {
+    /// Add an URL to the path_map HashMap and return if it was inserted or not
+    fn map_url_path(&self, url: &Url, path: String) -> bool {
         let mut path_map = self.path_map.lock().unwrap();
 
         if !path_map.contains_key(url.as_str()) {
@@ -63,16 +64,17 @@ impl Scraper {
 
     /// Push a new URL into the channel
     fn push(transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
-        match transmitter.send((url, depth)) {
-            Ok(_) => (),
-            Err(e) => panic!("{}", e),
-        };
+        if let Err(e) = transmitter.send((url, depth)) {
+            error!("Couldn't push to channel ! {}", e);
+        }
     }
 
     /// Fix the URLs contained in the DOM-tree so they point to each other
     fn fix_domtree(&self, old_url_str: &mut String, new_url: &Url) {
         let path_map = self.path_map.lock().unwrap();
-        let new_url_str = url_helper::str_percent_encode(path_map.get(new_url.as_str()).unwrap());
+        let path = path_map.get(new_url.as_str()).unwrap();
+
+        let new_url_str = url_helper::encode(path);
 
         old_url_str.clear();
         old_url_str.push_str(&new_url_str);
@@ -93,9 +95,9 @@ impl Scraper {
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
                 let next_full_url = url.join(&next_url).unwrap();
-                if scraper.map_url(&next_full_url, url_helper::url_to_path(&next_full_url))
-                    && depth < scraper.args.depth
-                {
+                let path = url_helper::to_path(&next_full_url);
+
+                if scraper.map_url_path(&next_full_url, path) && depth < scraper.args.depth {
                     Scraper::push(transmitter, next_full_url.clone(), depth + 1);
                 }
 
@@ -109,31 +111,26 @@ impl Scraper {
     fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
         let response = scraper.downloader.get(&url).unwrap();
 
-        let data = match response.get_data() {
-            downloader::ResponseData::Html(data) => {
-                Scraper::handle_html(scraper, transmitter, &url, depth, data)
+        let data = match response.data {
+            response::ResponseData::Html(data) => {
+                Scraper::handle_html(scraper, transmitter, &url, depth, &data)
             }
-            downloader::ResponseData::Other(data) => data.to_vec(),
+            response::ResponseData::Other(data) => data,
         };
 
-        match response.get_filename() {
-            Some(filename) => {
-                disk::save_file(filename, &data, &scraper.args.output);
+        //Create a scope to unlock path_map automagicly
+        {
+            let path_map = scraper.path_map.lock().unwrap();
+            let path = path_map.get(url.as_str()).unwrap();
+            match response.filename {
+                Some(filename) => {
+                    disk::save_file(&filename, &data, &scraper.args.output);
 
-                let path_map = scraper.path_map.lock().unwrap();
-                disk::symlink(
-                    filename,
-                    path_map.get(url.as_str()).unwrap(),
-                    &scraper.args.output,
-                );
-            }
-            None => {
-                let path_map = scraper.path_map.lock().unwrap();
-                disk::save_file(
-                    path_map.get(url.as_str()).unwrap(),
-                    &data,
-                    &scraper.args.output,
-                );
+                    disk::symlink(path, &filename, &scraper.args.output);
+                }
+                None => {
+                    disk::save_file(path, &data, &scraper.args.output);
+                }
             }
         }
 
@@ -147,10 +144,7 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
-        self.map_url(
-            &self.args.origin,
-            url_helper::url_to_path(&self.args.origin),
-        );
+        self.map_url_path(&self.args.origin, url_helper::to_path(&self.args.origin));
         Scraper::push(&self.transmitter, self.args.origin.clone(), 0);
 
         thread::scope(|thread_scope| {
