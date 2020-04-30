@@ -1,13 +1,17 @@
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use url::Url;
 
+///Max file name size supported by the file system
 const FILE_NAME_MAX_LENGTH: usize = 255;
+///Characters that need to be replaced by encode()
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b'?');
 
+///Encode special character with '%' representation
 pub fn encode(path: &str) -> String {
     utf8_percent_encode(path, FRAGMENT).to_string()
 }
 
+///Convert an Url to the corresponding path
 pub fn to_path(url: &Url) -> String {
     let url = url.as_str().split("://").collect::<Vec<&str>>()[1];
 

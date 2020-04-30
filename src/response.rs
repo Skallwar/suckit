@@ -11,6 +11,7 @@ pub struct Response {
 }
 
 impl Response {
+    ///Create a new Response
     pub fn new(data: ResponseData, filename: Option<String>) -> Response {
         Response { data, filename }
     }
