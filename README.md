@@ -2,7 +2,7 @@
 
 # SuckIT
 
-`SuckIT` allows you to recursively visit and download a website's content to
+`SuckIT` allows you to recursively visit and suck a website's content to
 your disk.
 
 ![SuckIT Logo](suckit_logo.png)
