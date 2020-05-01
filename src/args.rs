@@ -27,7 +27,7 @@ pub struct Args {
     pub tries: usize,
 
     ///Show all logs
-    #[structopt(short, long, help = "Enable more information regarding the download")]
+    #[structopt(short, long, help = "Enable more information regarding the scraping process")]
     pub verbose: bool,
 }
 
