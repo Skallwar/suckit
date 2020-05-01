@@ -7,7 +7,7 @@ use url::Url;
 #[derive(Debug, StructOpt)]
 pub struct Args {
     ///Entry point of scraping
-    #[structopt(name = "url", parse(try_from_str), help = "URL to start scraping from")]
+    #[structopt(name = "url", parse(try_from_str), help = "Entry point of the scraping")]
     pub origin: Url,
 
     ///Output directory
