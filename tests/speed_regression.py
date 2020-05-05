@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # Number of tests for each bench-set
-TEST_RETRIES = 5
+TEST_RETRIES = 10
 
 # File to store the results
 FILENAME = "speed.csv"
