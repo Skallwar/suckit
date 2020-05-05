@@ -44,7 +44,7 @@ To install it, you need to have Rust installed.
 * Check out [this link](https://www.rust-lang.org/learn/get-started) for
 instructions on how to install Rust.
 
-* If you just want the suckit executable, you can simply run
+* If you just want to install the suckit executable, you can simply run
 `cargo install --git https://github.com/skallwar/suckit`
 
 * Now, run it from anywhere with the `suckit` command.
