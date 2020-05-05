@@ -44,19 +44,8 @@ To install it, you need to have Rust installed.
 * Check out [this link](https://www.rust-lang.org/learn/get-started) for
 instructions on how to install Rust.
 
-* Then, download the `suckit` repository by cloning it or downloading a zipped
-version of it and enter the directory.
-
-```shell
-git clone https://github.com/skallwar/suckit
-cd suckit
-```
-
-* You can now install SuckIT!
-
-```shell
-cargo install --path .
-```
+* If you just want to install the suckit executable, you can simply run
+`cargo install --git https://github.com/skallwar/suckit`
 
 * Now, run it from anywhere with the `suckit` command.
 
