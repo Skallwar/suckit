@@ -27,7 +27,7 @@ CUR_PID = 0
 SUCKIT_CMD = "suckit"
 
 # URL to start scraping from
-URL = "https://forum.httrack.com"
+URL = "http://books.toscrape.com"
 
 def print_info():
     info = """
