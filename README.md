@@ -35,6 +35,31 @@ A common use case could be the following:
 
 [![asciicast](https://asciinema.org/a/17XpBXaZhpIX41w7nRF6i3M9y.svg)](https://asciinema.org/a/17XpBXaZhpIX41w7nRF6i3M9y)
 
+# Installation
+
+As of right now, `SuckIT` does not work on Windows.
+
+To install it, you need to have Rust installed.
+
+* Check out [this link](https://www.rust-lang.org/learn/get-started) for
+instructions on how to install Rust.
+
+* Then, download the `suckit` repository by cloning it or downloading a zipped
+version of it and enter the directory.
+
+```shell
+git clone https://github.com/skallwar/suckit
+cd suckit
+```
+
+* You can now install SuckIT!
+
+```shell
+cargo install --path .
+```
+
+* Now, run it from anywhere with the `suckit` command.
+
 __Want to contribute ? Feel free to
 [open an issue](https://github.com/Skallwar/suckit/issues/new) or
 [submit a PR](https://github.com/Skallwar/suckit/compare) !__
