@@ -19,8 +19,8 @@ pub struct Args {
     pub jobs: usize,
 
     ///Max depth of scraping recursion
-    #[structopt(short, long, default_value = "5", help = "Maximum recursion depth to reach when visiting")]
-    pub depth: usize,
+    #[structopt(short, long, default_value = "-1", help = "Maximum recursion depth to reach when visiting. -1 is the default and will go as far as it can")]
+    pub depth: i32,
 
     ///Number of retries when downloading a page fails
     #[structopt(short, long, default_value = "20", help = "Maximum amount of retries on download failure")]

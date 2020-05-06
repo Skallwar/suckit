@@ -30,8 +30,8 @@ static SLEEP_DURATION: time::Duration = time::Duration::from_millis(SLEEP_MILLIS
 /// adds more as new URLs are found
 pub struct Scraper {
     args: args::Args,
-    transmitter: Sender<(Url, usize)>,
-    receiver: Receiver<(Url, usize)>,
+    transmitter: Sender<(Url, i32)>,
+    receiver: Receiver<(Url, i32)>,
     downloader: downloader::Downloader,
     visited_urls: Mutex<HashSet<String>>,
     path_map: Mutex<HashMap<String, String>>,
@@ -65,7 +65,7 @@ impl Scraper {
     }
 
     /// Push a new URL into the channel
-    fn push(transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
+    fn push(transmitter: &Sender<(Url, i32)>, url: Url, depth: i32) {
         if let Err(e) = transmitter.send((url, depth)) {
             error!("Couldn't push to channel ! {}", e);
         }
@@ -85,9 +85,9 @@ impl Scraper {
     ///Proces an html file: add new url to the chanel and prepare for offline navigation
     fn handle_html(
         scraper: &Scraper,
-        transmitter: &Sender<(Url, usize)>,
+        transmitter: &Sender<(Url, i32)>,
         url: &Url,
-        depth: usize,
+        depth: i32,
         data: &str,
     ) -> Vec<u8> {
         let dom = dom::Dom::new(data);
@@ -99,7 +99,7 @@ impl Scraper {
                 let next_full_url = url.join(&next_url).unwrap();
                 let path = url_helper::to_path(&next_full_url);
 
-                if scraper.map_url_path(&next_full_url, path) && depth < scraper.args.depth {
+                if scraper.map_url_path(&next_full_url, path) && (scraper.args.depth == -1 || depth < scraper.args.depth) {
                     Scraper::push(transmitter, next_full_url.clone(), depth + 1);
                 }
 
@@ -110,7 +110,7 @@ impl Scraper {
     }
 
     /// Process a single URL
-    fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, usize)>, url: Url, depth: usize) {
+    fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, i32)>, url: Url, depth: i32) {
         let response = scraper.downloader.get(&url).unwrap();
 
         let data = match response.data {
