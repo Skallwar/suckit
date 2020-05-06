@@ -226,9 +226,11 @@ mod tests {
         let args = args::Args {
             origin: Url::parse("https://example.com/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
-            jobs: 1,
+            jobs:  1,
             tries: 1,
             depth: 5,
+            low:   0,
+            high:  0,
             verbose: true,
         };
 
