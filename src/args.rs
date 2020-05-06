@@ -37,6 +37,10 @@ pub struct Args {
     /// The max seconds of delay between downloads
     #[structopt(long, default_value = "0", help="Generate an extra random delay between downloads, from 0 to this number. This is added to the base delay seconds")]
     pub random_range: u64,
+
+    /// User agent to be used to send requests
+    #[structopt(short, long, default_value = "suckit", help="User agent to be used for sending requests")]
+    pub user_agent: String,
 }
 
 impl Args {
