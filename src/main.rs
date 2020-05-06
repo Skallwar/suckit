@@ -3,9 +3,9 @@ mod disk;
 mod dom;
 mod downloader;
 mod logger;
+mod response;
 mod scraper;
 mod url_helper;
-mod response;
 
 use scraper::Scraper;
 

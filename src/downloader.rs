@@ -6,18 +6,19 @@ use crate::warn;
 ///A Downloader to download web content
 pub struct Downloader {
     client: reqwest::blocking::Client,
-    tries: usize,
+    tries: usize
 }
 
 impl Downloader {
     /// Create a new Downloader
-    pub fn new(tries: usize) -> Downloader {
+    pub fn new(tries: usize, user_agent: &str) -> Downloader {
         Downloader {
             client: reqwest::blocking::ClientBuilder::new()
                 .cookie_store(true)
+                .user_agent(user_agent)
                 .build()
                 .unwrap(),
-            tries,
+            tries
         }
     }
 
@@ -92,7 +93,7 @@ mod tests {
     #[test]
     fn test_download_url() {
         let url: Url = Url::parse("https://lwn.net").unwrap();
-        match Downloader::new(1).get(&url) {
+        match Downloader::new(1, "suckit").get(&url) {
             Err(e) => assert!(false, "Fail to download lwn.net: {:?}", e),
             _ => {}
         }

@@ -46,7 +46,7 @@ impl Scraper {
         let (tx, rx) = crossbeam::channel::unbounded();
 
         Scraper {
-            downloader: downloader::Downloader::new(args.tries),
+            downloader: downloader::Downloader::new(args.tries, &args.user_agent),
             args,
             transmitter: tx,
             receiver: rx,
@@ -190,7 +190,9 @@ impl Scraper {
         let base_delay = self.args.delay;
         let random_range = self.args.random_range;
 
-        if base_delay == 0 && random_range == 0 { return; }
+        if base_delay == 0 && random_range == 0 {
+            return;
+        }
 
         // delay_range+1 because gen_range is exclusive on the upper limit
         let rand_delay_secs = rng.gen_range(0, random_range + 1);
@@ -225,11 +227,12 @@ mod tests {
         let args = args::Args {
             origin: Url::parse("https://example.com/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
-            jobs:  1,
+            jobs: 1,
             tries: 1,
             depth: 5,
-            delay:   0,
-            random_range:  0,
+            delay: 0,
+            user_agent: "suckit".to_string(),
+            random_range: 0,
             verbose: true,
         };
 
@@ -241,11 +244,12 @@ mod tests {
         let args = args::Args {
             origin: Url::parse("https://example.com/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
-            jobs:  1,
+            jobs: 1,
             tries: 1,
             depth: 5,
-            delay:   2,
-            random_range:  5,
+            delay: 2,
+            user_agent: "suckit".to_string(),
+            random_range: 5,
             verbose: true,
         };
 
