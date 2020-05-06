@@ -39,7 +39,7 @@ pub struct Args {
     pub random_range: u64,
 
     /// User agent to be used to send requests
-    #[structopt(short, default_value = "suckit", help="User agent to be used for sending requests")]
+    #[structopt(short, long, default_value = "suckit", help="User agent to be used for sending requests")]
     pub user_agent: String,
 }
 
