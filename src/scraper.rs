@@ -40,6 +40,7 @@ pub struct Scraper {
 impl Scraper {
     /// Create a new scraper with command line options
     pub fn new(args: args::Args) -> Scraper {
+        // If high is 0 then it is counted as low+5
         if args.low > args.high && args.high != 0 {
             error!("Error in parameters, the lowest delay can't be more than the highest");
         }
