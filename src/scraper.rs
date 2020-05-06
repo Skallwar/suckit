@@ -176,7 +176,7 @@ impl Scraper {
                             Ok((url, depth)) => {
                                 counter = 0;
                                 Scraper::handle_url(&self_clone, &tx, url, depth);
-                                &self_clone.sleep(&mut rng);
+                                self_clone.sleep(&mut rng);
                             }
                         }
                     }
