@@ -35,7 +35,7 @@ pub struct Args {
     pub delay: u64,
 
     /// The max seconds of delay between downloads
-    #[structopt(long, default_value = "0", help="Generate an extra random delay between downloads up to this number. This is added to the base delay seconds")]
+    #[structopt(long, default_value = "0", help="Generate an extra random delay between downloads, from 0 to this number. This is added to the base delay seconds")]
     pub random_range: u64,
 }
 
