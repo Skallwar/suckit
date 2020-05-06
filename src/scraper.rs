@@ -218,7 +218,7 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
-    fn new() {
+    fn test_zero_delay_range() {
         let args = args::Args {
             origin: Url::parse("https://example.com/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
@@ -227,6 +227,22 @@ mod tests {
             depth: 5,
             delay:   0,
             random_range:  0,
+            verbose: true,
+        };
+
+        let _ = Scraper::new(args);
+    }
+
+    #[test]
+    fn test_non_zero_delay_range() {
+        let args = args::Args {
+            origin: Url::parse("https://example.com/").unwrap(),
+            output: Some(PathBuf::from("/tmp")),
+            jobs:  1,
+            tries: 1,
+            depth: 5,
+            delay:   2,
+            random_range:  5,
             verbose: true,
         };
 
