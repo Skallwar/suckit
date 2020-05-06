@@ -7,6 +7,8 @@ use std::collections::HashSet;
 use std::sync::Mutex;
 use std::time;
 
+use rand::Rng;
+
 use super::downloader;
 
 use super::args;
@@ -155,6 +157,8 @@ impl Scraper {
 
                 thread_scope.spawn(move |_| {
                     let mut counter = 0;
+                    // For a random delay
+                    let mut rng = rand::thread_rng();
 
                     while counter < MAX_EMPTY_RECEIVES {
                         match rx.try_recv() {
@@ -168,6 +172,7 @@ impl Scraper {
                             Ok((url, depth)) => {
                                 counter = 0;
                                 Scraper::handle_url(&self_clone, &tx, url, depth);
+                                self_clone.sleep(&mut rng);
                             }
                         }
                     }
@@ -175,6 +180,19 @@ impl Scraper {
             }
         })
         .unwrap();
+    }
+
+    /// Sleep the thread for a variable amount of seconds to avoid getting banned
+    fn sleep(&self, rng: &mut rand::rngs::ThreadRng) {
+        let base_delay = self.args.delay;
+        let random_range = self.args.random_range;
+
+        if base_delay == 0 && random_range == 0 { return; }
+
+        // delay_range+1 because gen_range is exclusive on the upper limit
+        let rand_delay_secs = rng.gen_range(0, random_range + 1);
+        let delay_duration = time::Duration::from_secs(base_delay + rand_delay_secs);
+        std::thread::sleep(delay_duration);
     }
 
     /// If a URL should be visited, or does it belong to another domain
@@ -200,13 +218,31 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
-    fn new() {
+    fn test_zero_delay_range() {
         let args = args::Args {
             origin: Url::parse("https://example.com/").unwrap(),
             output: Some(PathBuf::from("/tmp")),
-            jobs: 1,
+            jobs:  1,
             tries: 1,
             depth: 5,
+            delay:   0,
+            random_range:  0,
+            verbose: true,
+        };
+
+        let _ = Scraper::new(args);
+    }
+
+    #[test]
+    fn test_non_zero_delay_range() {
+        let args = args::Args {
+            origin: Url::parse("https://example.com/").unwrap(),
+            output: Some(PathBuf::from("/tmp")),
+            jobs:  1,
+            tries: 1,
+            depth: 5,
+            delay:   2,
+            random_range:  5,
             verbose: true,
         };
 

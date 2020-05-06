@@ -1358,6 +1358,7 @@ dependencies = [
  "kuchiki",
  "percent-encoding 2.1.0",
  "pretty_assertions",
+ "rand",
  "reqwest",
  "structopt",
  "url 2.1.1",
