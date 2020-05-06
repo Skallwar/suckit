@@ -7,6 +7,8 @@ use std::collections::HashSet;
 use std::sync::Mutex;
 use std::time;
 
+use rand::Rng;
+
 use super::downloader;
 
 use super::args;
@@ -23,6 +25,9 @@ static MAX_EMPTY_RECEIVES: usize = 10;
 /// Sleep duration on empty recv()
 static SLEEP_MILLIS: u64 = 100;
 static SLEEP_DURATION: time::Duration = time::Duration::from_millis(SLEEP_MILLIS);
+
+/// Base delay between downloads
+static DELAY_BASE_MILLIS: u64 = 2000;
 
 /// Producer and Consumer data structure. Handles the incoming requests and
 /// adds more as new URLs are found
@@ -154,6 +159,8 @@ impl Scraper {
                 let self_clone = &self;
 
                 thread_scope.spawn(move |_| {
+                    // For a random delay
+                    let mut rng = rand::thread_rng();
                     let mut counter = 0;
 
                     while counter < MAX_EMPTY_RECEIVES {
@@ -168,6 +175,11 @@ impl Scraper {
                             Ok((url, depth)) => {
                                 counter = 0;
                                 Scraper::handle_url(&self_clone, &tx, url, depth);
+                                // Generate a custom delay from 2, to 7 seconds
+                                // Base delay is already 2 seconds
+                                let delay_added_millis = rng.gen_range(0, 6) * 1000;
+                                let delay_duration = time::Duration::from_millis(DELAY_BASE_MILLIS + delay_added_millis);
+                                std::thread::sleep(delay_duration);
                             }
                         }
                     }
