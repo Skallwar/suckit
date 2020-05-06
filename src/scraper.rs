@@ -187,11 +187,11 @@ impl Scraper {
         let base_delay = self.args.delay;
         let random_range = self.args.random_range;
 
-        if base == 0 && delay_range == 0 { return; }
+        if base_delay == 0 && random_range == 0 { return; }
 
         // delay_range+1 because gen_range is exclusive on the upper limit
-        let rand_delay_secs = rng.gen_range(0, delay_range + 1);
-        let delay_duration = time::Duration::from_secs(base + rand_delay_secs);
+        let rand_delay_secs = rng.gen_range(0, random_range + 1);
+        let delay_duration = time::Duration::from_secs(base_delay + rand_delay_secs);
         std::thread::sleep(delay_duration);
     }
 
