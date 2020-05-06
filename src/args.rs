@@ -29,6 +29,14 @@ pub struct Args {
     ///Show all logs
     #[structopt(short, long, help = "Enable more information regarding the scraping process")]
     pub verbose: bool,
+
+    /// The least seconds of delay between downloads
+    #[structopt(short, long, default_value = "0", help="Add a delay in seconds between downloads to reduce the likelihood of getting banned")]
+    pub low: u64,
+
+    /// The max seconds of delay between downloads
+    #[structopt(short, long, default_value = "0", help="The max amount of seconds to wait between downloads. Default to 0 if `low` is zero, otherwise it defaults to `low+5` seconds")]
+    pub high: u64,
 }
 
 impl Args {

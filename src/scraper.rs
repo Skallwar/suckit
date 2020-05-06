@@ -26,9 +26,6 @@ static MAX_EMPTY_RECEIVES: usize = 10;
 static SLEEP_MILLIS: u64 = 100;
 static SLEEP_DURATION: time::Duration = time::Duration::from_millis(SLEEP_MILLIS);
 
-/// Base delay between downloads
-static DELAY_BASE_MILLIS: u64 = 2000;
-
 /// Producer and Consumer data structure. Handles the incoming requests and
 /// adds more as new URLs are found
 pub struct Scraper {
@@ -43,6 +40,9 @@ pub struct Scraper {
 impl Scraper {
     /// Create a new scraper with command line options
     pub fn new(args: args::Args) -> Scraper {
+        if args.low > args.high && args.high != 0 {
+            error!("Error in parameters, the lowest delay can't be more than the highest");
+        }
         let (tx, rx) = crossbeam::channel::unbounded();
 
         Scraper {
@@ -159,9 +159,9 @@ impl Scraper {
                 let self_clone = &self;
 
                 thread_scope.spawn(move |_| {
+                    let mut counter = 0;
                     // For a random delay
                     let mut rng = rand::thread_rng();
-                    let mut counter = 0;
 
                     while counter < MAX_EMPTY_RECEIVES {
                         match rx.try_recv() {
@@ -175,11 +175,7 @@ impl Scraper {
                             Ok((url, depth)) => {
                                 counter = 0;
                                 Scraper::handle_url(&self_clone, &tx, url, depth);
-                                // Generate a custom delay from 2, to 7 seconds
-                                // Base delay is already 2 seconds
-                                let delay_added_millis = rng.gen_range(0, 6) * 1000;
-                                let delay_duration = time::Duration::from_millis(DELAY_BASE_MILLIS + delay_added_millis);
-                                std::thread::sleep(delay_duration);
+                                &self_clone.sleep(&mut rng);
                             }
                         }
                     }
@@ -187,6 +183,20 @@ impl Scraper {
             }
         })
         .unwrap();
+    }
+
+    /// Sleep the thread for a variable amount of seconds to avoid getting banned
+    fn sleep(&self, rng: &mut rand::rngs::ThreadRng) {
+        let low = self.args.low;
+        let mut high = self.args.high;
+
+        if low == 0 && high == 0 { return; }
+        if low != 0 && high == 0 { high = low + 5; }
+
+        // high+1 because gen_range is exclusive on the upper limit
+        let delay_secs = rng.gen_range(low, high+1);
+        let delay_duration = time::Duration::from_secs(delay_secs);
+        std::thread::sleep(delay_duration);
     }
 
     /// If a URL should be visited, or does it belong to another domain
