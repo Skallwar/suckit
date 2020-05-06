@@ -31,12 +31,12 @@ pub struct Args {
     pub verbose: bool,
 
     /// The least seconds of delay between downloads
-    #[structopt(short, long, default_value = "0", help="Add a delay in seconds between downloads to reduce the likelihood of getting banned")]
-    pub low: u64,
+    #[structopt(long, default_value = "0", help="Add a delay in seconds between downloads to reduce the likelihood of getting banned")]
+    pub delay: u64,
 
     /// The max seconds of delay between downloads
-    #[structopt(short, long, default_value = "0", help="The max amount of seconds to wait between downloads. Default to 0 if `low` is zero, otherwise it defaults to `low+5` seconds")]
-    pub high: u64,
+    #[structopt(long, default_value = "0", help="Generate an extra random delay between downloads up to this number. This is added to the base delay seconds")]
+    pub random_range: u64,
 }
 
 impl Args {

@@ -40,10 +40,6 @@ pub struct Scraper {
 impl Scraper {
     /// Create a new scraper with command line options
     pub fn new(args: args::Args) -> Scraper {
-        // If high is 0 then it is counted as low+5
-        if args.low > args.high && args.high != 0 {
-            error!("Error in parameters, the lowest delay can't be more than the highest");
-        }
         let (tx, rx) = crossbeam::channel::unbounded();
 
         Scraper {
@@ -188,15 +184,14 @@ impl Scraper {
 
     /// Sleep the thread for a variable amount of seconds to avoid getting banned
     fn sleep(&self, rng: &mut rand::rngs::ThreadRng) {
-        let low = self.args.low;
-        let mut high = self.args.high;
+        let base = self.args.delay;
+        let delay_range = self.args.random_range;
 
-        if low == 0 && high == 0 { return; }
-        if low != 0 && high == 0 { high = low + 5; }
+        if base == 0 && delay_range == 0 { return; }
 
-        // high+1 because gen_range is exclusive on the upper limit
-        let delay_secs = rng.gen_range(low, high+1);
-        let delay_duration = time::Duration::from_secs(delay_secs);
+        // delay_range+1 because gen_range is exclusive on the upper limit
+        let rand_delay_secs = rng.gen_range(0, delay_range+1);
+        let delay_duration = time::Duration::from_secs(base+rand_delay_secs);
         std::thread::sleep(delay_duration);
     }
 
@@ -230,8 +225,8 @@ mod tests {
             jobs:  1,
             tries: 1,
             depth: 5,
-            low:   0,
-            high:  0,
+            delay:   0,
+            random_range:  0,
             verbose: true,
         };
 
