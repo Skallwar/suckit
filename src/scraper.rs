@@ -184,7 +184,7 @@ impl Scraper {
 
     /// Sleep the thread for a variable amount of seconds to avoid getting banned
     fn sleep(&self, rng: &mut rand::rngs::ThreadRng) {
-        let base = self.args.delay;
+        let base_delay = self.args.delay;
         let delay_range = self.args.random_range;
 
         if base == 0 && delay_range == 0 { return; }
