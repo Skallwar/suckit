@@ -191,7 +191,7 @@ impl Scraper {
 
         // delay_range+1 because gen_range is exclusive on the upper limit
         let rand_delay_secs = rng.gen_range(0, delay_range + 1);
-        let delay_duration = time::Duration::from_secs(base+rand_delay_secs);
+        let delay_duration = time::Duration::from_secs(base + rand_delay_secs);
         std::thread::sleep(delay_duration);
     }
 
