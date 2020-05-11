@@ -18,3 +18,7 @@ bytes = "0.5"
 percent-encoding = "2.1"
 url = "2.1"
 rand = "0.7"
+regex = "1.3.7"
+
+[dev-dependencies]
+tiny_http = "0.7.0"

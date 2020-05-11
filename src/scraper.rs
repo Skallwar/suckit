@@ -125,18 +125,22 @@ impl Scraper {
             response::ResponseData::Other(data) => data,
         };
 
-        //Create a scope to unlock path_map automagicly
+        // Create a scope to unlock path_map automagicly
         {
             let path_map = scraper.path_map.lock().unwrap();
             let path = path_map.get(url.as_str()).unwrap();
-            match response.filename {
-                Some(filename) => {
-                    disk::save_file(&filename, &data, &scraper.args.output);
 
-                    disk::symlink(path, &filename, &scraper.args.output);
-                }
-                None => {
-                    disk::save_file(path, &data, &scraper.args.output);
+            if !scraper.args.exclude.is_match(url.as_str())
+                && scraper.args.include.is_match(url.as_str())
+            {
+                match response.filename {
+                    Some(filename) => {
+                        disk::save_file(&filename, &data, &scraper.args.output);
+                        disk::symlink(path, &filename, &scraper.args.output);
+                    }
+                    None => {
+                        disk::save_file(path, &data, &scraper.args.output);
+                    }
                 }
             }
         }
@@ -144,7 +148,7 @@ impl Scraper {
         scraper.visited_urls.lock().unwrap().insert(url.to_string());
 
         if scraper.args.verbose {
-            info!("Downloaded {}", url);
+            info!("Visited: {}", url);
         }
     }
 
@@ -222,6 +226,7 @@ impl Scraper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use regex::Regex;
     use std::path::PathBuf;
 
     #[test]
@@ -236,6 +241,8 @@ mod tests {
             user_agent: "suckit".to_string(),
             random_range: 0,
             verbose: true,
+            include: Regex::new("jpg").unwrap(),
+            exclude: Regex::new("png").unwrap(),
         };
 
         let _ = Scraper::new(args);
@@ -253,6 +260,8 @@ mod tests {
             user_agent: "suckit".to_string(),
             random_range: 5,
             verbose: true,
+            include: Regex::new("jpg").unwrap(),
+            exclude: Regex::new("png").unwrap(),
         };
 
         let _ = Scraper::new(args);

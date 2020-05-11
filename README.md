@@ -26,6 +26,9 @@ your disk.
 |`-j, --jobs`|Number of threads to use|
 |`-o, --output`|Output directory where the downloaded files are written|
 |`-t, --tries`|Number of times to retry when the downloading of a page fails|
+|`-u, --user-agent`|User agent to be used for sending requests|
+|`-i, --include`|Specify a regex to include pages that match this pattern|
+|`-e, --exclude`|Specify a regex to exclude pages that match this pattern|
 
 # Example
 

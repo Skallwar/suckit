@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use regex::Regex;
 use structopt::StructOpt;
 use url::Url;
 
@@ -77,6 +78,26 @@ pub struct Args {
         help = "User agent to be used for sending requests"
     )]
     pub user_agent: String,
+
+    /// Regex filter to limit saving pages to only matched ones
+    #[structopt(
+        short,
+        long,
+        default_value = ".*",
+        parse(try_from_str = parse_regex),
+        help = "Regex filter to limit to only saving pages that match this expression"
+    )]
+    pub include: Regex,
+
+    /// Regex filter to limit saving pages to only matched ones
+    #[structopt(
+        short,
+        long,
+        default_value = "$^",
+        parse(try_from_str = parse_regex),
+        help = "Regex filter to exclude saving pages that match this expression"
+    )]
+    pub exclude: Regex,
 }
 
 impl Args {
@@ -84,4 +105,8 @@ impl Args {
     pub fn collect() -> Args {
         Args::from_args()
     }
+}
+
+fn parse_regex(src: &str) -> Result<Regex, regex::Error> {
+    Regex::new(src)
 }
