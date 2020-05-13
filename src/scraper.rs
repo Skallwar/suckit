@@ -102,7 +102,9 @@ impl Scraper {
                 let next_full_url = url.join(&next_url).unwrap();
                 let path = url_helper::to_path(&next_full_url);
 
-                if scraper.map_url_path(&next_full_url, path) && (scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth) {
+                if scraper.map_url_path(&next_full_url, path)
+                    && (scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth)
+                {
                     Scraper::push(transmitter, next_full_url.clone(), depth + 1);
                 }
 

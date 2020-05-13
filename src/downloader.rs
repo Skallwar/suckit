@@ -6,7 +6,7 @@ use crate::warn;
 ///A Downloader to download web content
 pub struct Downloader {
     client: reqwest::blocking::Client,
-    tries: usize
+    tries: usize,
 }
 
 impl Downloader {
@@ -18,7 +18,7 @@ impl Downloader {
                 .user_agent(user_agent)
                 .build()
                 .unwrap(),
-            tries
+            tries,
         }
     }
 
