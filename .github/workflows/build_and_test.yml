@@ -9,6 +9,17 @@ on:
       - master
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build SuckIT
+      run: |
+          rustup component add rustfmt
+          cargo fmt -- --check || (echo "Please reformat your code with 'cargo
+          fmt' (version $(cargo fmt --version))"; false)
+
   build:
     runs-on: ubuntu-latest
 
