@@ -4,8 +4,8 @@ use url::Url;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::sync::Mutex;
 use std::process;
+use std::sync::Mutex;
 use std::time;
 
 use rand::Rng;
@@ -252,6 +252,7 @@ mod tests {
             verbose: true,
             include: Regex::new("jpg").unwrap(),
             exclude: Regex::new("png").unwrap(),
+            continue_on_error: true,
         };
 
         let _ = Scraper::new(args);
@@ -271,6 +272,7 @@ mod tests {
             verbose: true,
             include: Regex::new("jpg").unwrap(),
             exclude: Regex::new("png").unwrap(),
+            continue_on_error: true,
         };
 
         let _ = Scraper::new(args);
