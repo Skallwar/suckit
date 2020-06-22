@@ -98,6 +98,14 @@ pub struct Args {
         help = "Regex filter to exclude saving pages that match this expression"
     )]
     pub exclude: Regex,
+
+    /// Decides if we should bail out on download error (like, too many redirects)
+    #[structopt(
+        short,
+        long,
+        help = "If false, program will quit if error persists after number of retries. If true, it will skip problematic page"
+    )]
+    pub continue_on_error: bool,
 }
 
 impl Args {

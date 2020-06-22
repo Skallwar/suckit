@@ -5,6 +5,7 @@ use url::Url;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Mutex;
+use std::process;
 use std::time;
 
 use rand::Rng;
@@ -116,31 +117,39 @@ impl Scraper {
 
     /// Process a single URL
     fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, i32)>, url: Url, depth: i32) {
-        let response = scraper.downloader.get(&url).unwrap();
+        match scraper.downloader.get(&url) {
+            Ok(response) => {
+                let data = match response.data {
+                    response::ResponseData::Html(data) => {
+                        Scraper::handle_html(scraper, transmitter, &url, depth, &data)
+                    }
+                    response::ResponseData::Other(data) => data,
+                };
 
-        let data = match response.data {
-            response::ResponseData::Html(data) => {
-                Scraper::handle_html(scraper, transmitter, &url, depth, &data)
+                // Create a scope to unlock path_map automagicly
+                {
+                    let path_map = scraper.path_map.lock().unwrap();
+                    let path = path_map.get(url.as_str()).unwrap();
+
+                    if !scraper.args.exclude.is_match(url.as_str())
+                        && scraper.args.include.is_match(url.as_str())
+                    {
+                        match response.filename {
+                            Some(filename) => {
+                                disk::save_file(&filename, &data, &scraper.args.output);
+                                disk::symlink(path, &filename, &scraper.args.output);
+                            }
+                            None => {
+                                disk::save_file(path, &data, &scraper.args.output);
+                            }
+                        }
+                    }
+                }
             }
-            response::ResponseData::Other(data) => data,
-        };
-
-        // Create a scope to unlock path_map automagicly
-        {
-            let path_map = scraper.path_map.lock().unwrap();
-            let path = path_map.get(url.as_str()).unwrap();
-
-            if !scraper.args.exclude.is_match(url.as_str())
-                && scraper.args.include.is_match(url.as_str())
-            {
-                match response.filename {
-                    Some(filename) => {
-                        disk::save_file(&filename, &data, &scraper.args.output);
-                        disk::symlink(path, &filename, &scraper.args.output);
-                    }
-                    None => {
-                        disk::save_file(path, &data, &scraper.args.output);
-                    }
+            Err(e) => {
+                println!("Couldn't download a page, {:?}", e);
+                if !scraper.args.continue_on_error {
+                    process::exit(1);
                 }
             }
         }
