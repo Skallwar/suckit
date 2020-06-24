@@ -103,7 +103,7 @@ pub struct Args {
     #[structopt(
         short,
         long,
-        help = "If false, program will quit if error persists after number of retries. If true, it will skip problematic page"
+        help = "Flag to enable or disable exit on error"
     )]
     pub continue_on_error: bool,
 }
