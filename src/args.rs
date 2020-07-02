@@ -100,11 +100,7 @@ pub struct Args {
     pub exclude: Regex,
 
     /// Decides if we should bail out on download error (like, too many redirects)
-    #[structopt(
-        short,
-        long,
-        help = "Flag to enable or disable exit on error"
-    )]
+    #[structopt(short, long, help = "Flag to enable or disable exit on error")]
     pub continue_on_error: bool,
 }
 
