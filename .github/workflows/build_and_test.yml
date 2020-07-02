@@ -20,21 +20,24 @@ jobs:
           cargo fmt -- --check || (echo "Please reformat your code with 'cargo
           fmt' (version $(cargo fmt --version))"; false)
 
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: |
-          cargo build
-
   tests:
     runs-on: ubuntu-latest
-    needs: build
 
     steps:
     - uses: actions/checkout@v2
     - name: Unit tests
       run: |
           cargo test
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, tests]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Check
+      run: |
+          cargo check
+    - name: Build
+      run: |
+          cargo build
