@@ -1,8 +1,23 @@
 [package]
 name = "suckit"
 version = "0.1.0"
-authors = ["Skallwar <estblcsk@gmail.com>"]
 edition = "2018"
+authors = ["Esteban \"Skallwar\" Blanc <estblcsk@gmail.com>",
+	   "Arthur \"CohenArthur\" Cohen <arthur.cohen@epita.fr>"]
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/skallwar/suckit"
+repository = "https://github.com/skallwar/suckit"
+documentation = "https://github.com/skallwar/suckit"
+readme = "README.md"
+description = "SuckIT, Suck the InTernet"
+keywords = ["cli"]
+categories = ["command-line-utilities"]
+include = [
+	"README.md",
+	"LICENSE*",
+	"Cargo.toml",
+	"src/*",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
