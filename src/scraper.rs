@@ -131,7 +131,8 @@ impl Scraper {
                     let path_map = scraper.path_map.lock().unwrap();
                     let path = path_map.get(url.as_str()).unwrap();
 
-                    if !scraper.args.exclude.is_match(url.as_str())
+                    if !scraper.args.dry_run
+                        && !scraper.args.exclude.is_match(url.as_str())
                         && scraper.args.include.is_match(url.as_str())
                     {
                         match response.filename {
@@ -253,6 +254,7 @@ mod tests {
             include: Regex::new("jpg").unwrap(),
             exclude: Regex::new("png").unwrap(),
             continue_on_error: true,
+            dry_run: false,
         };
 
         let _ = Scraper::new(args);
@@ -273,6 +275,7 @@ mod tests {
             include: Regex::new("jpg").unwrap(),
             exclude: Regex::new("png").unwrap(),
             continue_on_error: true,
+            dry_run: false,
         };
 
         let _ = Scraper::new(args);
