@@ -102,6 +102,10 @@ pub struct Args {
     /// Decides if we should bail out on download error (like, too many redirects)
     #[structopt(short, long, help = "Flag to enable or disable exit on error")]
     pub continue_on_error: bool,
+
+    /// If set, run without saving anything to the disk
+    #[structopt(long, help = "Do everything without saving the files to the disk")]
+    pub dry_run: bool,
 }
 
 impl Args {
