@@ -37,8 +37,11 @@ impl Downloader {
     pub fn new(tries: usize, user_agent: &str, auth: &[String]) -> Downloader {
         // Create a mapping of hosts to username, password tuples for authentication
         let mut auth_map = HashMap::new();
-        if let Some((username, password, host)) = parse_auth(auth) {
-            auth_map.insert(host, (username, password));
+        // Iterate over the auth string in chunks of 3 items each for (username, password, host)
+        for auth_chunk in auth.chunks(3) {
+            if let Some((username, password, host)) = parse_auth(auth_chunk) {
+                auth_map.insert(host, (username, password));
+            }
         }
 
         Downloader {
