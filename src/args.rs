@@ -99,6 +99,15 @@ pub struct Args {
     )]
     pub exclude: Regex,
 
+    /// HTTP basic authentication credentials
+    #[structopt(
+        short,
+        long,
+        use_delimiter = true,
+        help = "HTTP basic authentication credentials, comma separated as \"username,password,host\""
+    )]
+    pub auth: Vec<String>,
+
     /// Decides if we should bail out on download error (like, too many redirects)
     #[structopt(short, long, help = "Flag to enable or disable exit on error")]
     pub continue_on_error: bool,
