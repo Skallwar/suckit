@@ -47,7 +47,12 @@ impl Scraper {
         let (tx, rx) = crossbeam::channel::unbounded();
 
         Scraper {
-            downloader: downloader::Downloader::new(args.tries, &args.user_agent, &args.auth),
+            downloader: downloader::Downloader::new(
+                args.tries,
+                &args.user_agent,
+                &args.auth,
+                &args.origin,
+            ),
             args,
             transmitter: tx,
             receiver: rx,
