@@ -4,6 +4,8 @@ use url::Url;
 
 use crate::warn;
 
+const AUTH_CHUNK_SIZE: usize = 3;
+
 ///A Downloader to download web content
 pub struct Downloader {
     client: reqwest::blocking::Client,
@@ -50,7 +52,7 @@ impl Downloader {
         // Create a mapping of hosts to username, password tuples for authentication
         let mut auth_map = HashMap::new();
         // Iterate over the auth string in chunks of 3 items each for (username, password, host)
-        for auth_chunk in auth.chunks(3) {
+        for auth_chunk in auth.chunks(AUTH_CHUNK_SIZE) {
             // Throwing the error with panic! for now if parsing fails
             let (username, password, host) = parse_auth(auth_chunk, origin).unwrap();
             auth_map.insert(host, (username, password));

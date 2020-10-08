@@ -105,7 +105,7 @@ pub struct Args {
         long,
         use_delimiter = true,
         value_delimiter = " ",
-        help = "HTTP basic authentication credentials space-separated as \"username password host\". Can be repeated for multiple credentials"
+        help = "HTTP basic authentication credentials space-separated as \"username password host\". Can be repeated for multiple credentials as \"u1 p1 h1 u2 p2 h2\""
     )]
     pub auth: Vec<String>,
 
