@@ -2,19 +2,42 @@ use std::fs::File;
 use std::process::Command;
 use std::process::Stdio;
 use std::thread;
-use tiny_http::{Response, Server};
+use tiny_http::{Header, Response, Server};
 
 const PAGE: &'static str = "tests/fixtures/index.html";
+const AUTH_HEADER: &str = "Authorization";
+const AUTH_CREDENTIALS: &str = "Basic dXNlcm5hbWU6cGFzc3dvcmQ="; // base64-encoded "username:password"
 
-pub fn spawn_local_http_server() {
+pub fn spawn_local_http_server(requires_auth: bool) {
     let server = Server::http("0.0.0.0:8000").unwrap();
     println!("Spawning http server");
     thread::spawn(move || {
         for request in server.incoming_requests() {
-            let response = Response::from_file(File::open(PAGE).unwrap());
-            request.respond(response).unwrap();
+            // Authenticate request from headers if provided
+            let auth_header = request
+                .headers()
+                .iter()
+                .find(|h| h.field.equiv(AUTH_HEADER));
+            let valid_auth = check_auth_credentials(auth_header);
+
+            if requires_auth && !valid_auth {
+                let mut response = Response::from_string("Invalid auth").with_status_code(401);
+                let h = Header::from_bytes("WWW-Authenticate", r#"Basic realm="Test""#).unwrap();
+                response.add_header(h);
+                request.respond(response).unwrap();
+            } else {
+                let response = Response::from_file(File::open(PAGE).unwrap());
+                request.respond(response).unwrap();
+            };
         }
     });
+}
+
+fn check_auth_credentials(auth_header: Option<&Header>) -> bool {
+    match auth_header {
+        None => false,
+        Some(header) => header.value.as_str() == AUTH_CREDENTIALS,
+    }
 }
 
 pub fn get_file_count_with_pattern(pattern: &str, dir: &str) -> Result<usize, ()> {
