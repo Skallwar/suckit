@@ -47,7 +47,12 @@ impl Scraper {
         let (tx, rx) = crossbeam::channel::unbounded();
 
         Scraper {
-            downloader: downloader::Downloader::new(args.tries, &args.user_agent),
+            downloader: downloader::Downloader::new(
+                args.tries,
+                &args.user_agent,
+                &args.auth,
+                &args.origin,
+            ),
             args,
             transmitter: tx,
             receiver: rx,
@@ -253,6 +258,7 @@ mod tests {
             verbose: true,
             include: Regex::new("jpg").unwrap(),
             exclude: Regex::new("png").unwrap(),
+            auth: Vec::new(),
             continue_on_error: true,
             dry_run: false,
         };
@@ -274,6 +280,7 @@ mod tests {
             verbose: true,
             include: Regex::new("jpg").unwrap(),
             exclude: Regex::new("png").unwrap(),
+            auth: Vec::new(),
             continue_on_error: true,
             dry_run: false,
         };
