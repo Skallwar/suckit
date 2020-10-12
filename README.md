@@ -13,8 +13,8 @@ your disk.
 * [x] Uses multithreading
 * [x] Writes the website's content to your disk
 * [x] Enables offline navigation
+* [x] Offers random delays to avoid IP banning
 * [ ] Saves application state on CTRL-C for later pickup
-* [ ] Offers random delays to avoid IP banning
 
 # Options
 
@@ -29,6 +29,7 @@ your disk.
 |`-u, --user-agent`|User agent to be used for sending requests|
 |`-i, --include`|Specify a regex to include pages that match this pattern|
 |`-e, --exclude`|Specify a regex to exclude pages that match this pattern|
+|`-a, --auth` |Provide usernames and passwords for the downloader to use|
 
 # Example
 
