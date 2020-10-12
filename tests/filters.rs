@@ -8,7 +8,6 @@ use std::process::Command;
 use std::process::Stdio;
 use std::sync::Once;
 
-const SUCKIT: &'static str = "target/debug/suckit";
 const ADDR: &'static str = "http://0.0.0.0:8000";
 static START: Once = Once::new();
 
@@ -28,7 +27,7 @@ fn test_include_exclude() {
 // Test to use include flag for downloading pages only matching the given pattern.
 fn include_filter() {
     let output_dir = "w2";
-    let mut cmd = Command::new(SUCKIT)
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[ADDR, "-o", "w2", "-i", "mp[3-4]", "-j", "16"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -49,7 +48,7 @@ fn include_filter() {
 // Test demonstrating usage of multiple include patterns for downloading pages only matching the given pattern.
 fn include_multiple_filters() {
     let output_dir = "w1";
-    let mut cmd = Command::new(SUCKIT)
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[ADDR, "-o", output_dir, "-i", "(mp[3-4])|(txt)", "-j", "16"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -68,7 +67,7 @@ fn include_multiple_filters() {
 // Test to use exclude flag for excluding pages matching the given pattern.
 fn exclude_filter() {
     let output_dir = "w3";
-    let mut cmd = Command::new(SUCKIT)
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[ADDR, "-o", output_dir, "-e", "jpe?g", "-j", "16"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
