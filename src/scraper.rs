@@ -105,8 +105,9 @@ impl Scraper {
             .into_iter()
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
-                let next_full_url = url.join(&next_url).unwrap();
+                let mut next_full_url = url.join(&next_url).unwrap();
                 let path = url_helper::to_path(&next_full_url);
+                next_full_url.set_fragment(None);
 
                 if scraper.map_url_path(&next_full_url, path)
                     && (scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth)
