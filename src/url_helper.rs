@@ -13,6 +13,10 @@ pub fn encode(path: &str) -> String {
 
 ///Convert an Url to the corresponding path
 pub fn to_path(url: &Url) -> String {
+    let fragment = url.fragment();
+    let mut url = url.clone();
+    url.set_fragment(None);
+
     let url = url.as_str().split("://").collect::<Vec<&str>>()[1];
 
     let mut url = url.replace('/', "_").replace('.', "_");
@@ -21,7 +25,10 @@ pub fn to_path(url: &Url) -> String {
     }
     let url = url.trim_end_matches('_'); //Remaining '/'
 
-    url.to_string()
+    match fragment {
+        Some(fragment) => format!("{}#{}", url.to_string(), fragment),
+        None => url.to_string(),
+    }
 }
 
 #[cfg(test)]
@@ -30,9 +37,9 @@ mod tests {
 
     #[test]
     fn url_to_path() {
-        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/").unwrap());
+        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/#fragment").unwrap());
 
-        assert_eq!(str, "lwn_net_Kernel");
+        assert_eq!(str, "lwn_net_Kernel#fragment");
     }
 
     #[test]
