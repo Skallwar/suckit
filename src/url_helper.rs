@@ -37,6 +37,13 @@ mod tests {
 
     #[test]
     fn url_to_path() {
+        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/").unwrap());
+
+        assert_eq!(str, "lwn_net_Kernel");
+    }
+
+    #[test]
+    fn url_to_path_fragment() {
         let str = super::to_path(&Url::parse("https://lwn.net/Kernel/#fragment").unwrap());
 
         assert_eq!(str, "lwn_net_Kernel#fragment");
