@@ -53,6 +53,14 @@ instructions on how to install Rust.
 
 * Now, run it from anywhere with the `suckit` command.
 
+### Arch Linux
+
+`suckit` can be installed from available [AUR packages](https://aur.archlinux.org/packages/?O=0&SeB=b&K=suckit&outdated=&SB=n&SO=a&PP=50&do_Search=Go) using an [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers). For example,
+
+```
+yay -S suckit
+```
+
 __Want to contribute ? Feel free to
 [open an issue](https://github.com/Skallwar/suckit/issues/new) or
 [submit a PR](https://github.com/Skallwar/suckit/compare) !__
