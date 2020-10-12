@@ -111,7 +111,9 @@ impl Scraper {
                 if scraper.map_url_path(&next_full_url, path)
                     && (scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth)
                 {
-                    Scraper::push(transmitter, next_full_url.clone(), depth + 1);
+                    let mut next_full_download_url = next_full_url.clone();
+                    next_full_download_url.set_fragment(None);
+                    Scraper::push(transmitter, next_full_download_url, depth + 1);
                 }
 
                 scraper.fix_domtree(next_url, &next_full_url);
