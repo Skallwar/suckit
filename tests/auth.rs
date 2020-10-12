@@ -8,7 +8,6 @@ use std::process::Command;
 use std::process::Stdio;
 use std::sync::Once;
 
-const SUCKIT: &'static str = "target/debug/suckit";
 const ADDR: &'static str = "http://0.0.0.0:8000";
 static START: Once = Once::new();
 
@@ -27,7 +26,7 @@ fn test_auth() {
 // Shouldn't supply credentials to a non-matching host
 fn auth_different_host() {
     let output_dir = "w4";
-    let mut cmd = Command::new(SUCKIT)
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[
             ADDR,
             "-o",
@@ -54,7 +53,7 @@ fn auth_different_host() {
 // Should authenticate with credentials to host (defaulting to origin host)
 fn auth_valid() {
     let output_dir = "w5";
-    let mut cmd = Command::new(SUCKIT)
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[ADDR, "-o", "w5", "-a", "username password", "-j", "16"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
