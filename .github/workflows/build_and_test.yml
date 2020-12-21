@@ -22,22 +22,46 @@ jobs:
 
   tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu]
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Rustup setup
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        default: true
+        target: ${{ matrix.target }}
+
     - name: Unit tests
       run: |
-          cargo test
+          cargo test --target ${{ matrix.target }}
 
   build:
-    runs-on: ubuntu-latest
     needs: [lint, tests]
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu]
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Rustup setup
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        default: true
+        target: ${{ matrix.target }}
+
     - name: Check
       run: |
-          cargo check
+          cargo check --target ${{ matrix.target }}
+
     - name: Build
       run: |
-          cargo build
+          cargo build --target ${{ matrix.target }}
