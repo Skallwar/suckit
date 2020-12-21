@@ -94,7 +94,7 @@ impl Scraper {
     /// Find the charset of the webpage. ``data`` is not a String as this might not be utf8
     fn find_charset(data: &[u8]) -> Option<String> {
         let data_utf8 = unsafe { String::from_utf8_unchecked(Vec::from(data)) };
-        let regex = Regex::new("<meta.*charset\\s*=\\s*([^\"\\s]+).*>").unwrap();
+        let regex = Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s]+).*>").unwrap();
         let captures = regex.captures(&data_utf8);
 
         captures.map(|first| String::from(first.get(1).unwrap().as_str()))
