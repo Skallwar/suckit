@@ -109,12 +109,6 @@ impl Downloader {
                     None => "text/html",
                 };
 
-                let charset = data
-                    .headers()
-                    .get("charset")
-                    .map(|value| value.to_str().unwrap())
-                    .map(|string| String::from(string));
-
                 let filename = if !Downloader::is_html(data_type) {
                     Downloader::get_filename(data.headers())
                 } else {
@@ -129,7 +123,7 @@ impl Downloader {
                     ResponseData::Other(raw_data)
                 };
 
-                Ok(Response::new(data, charset, filename))
+                Ok(Response::new(data, filename))
             }
 
             Err(e) => {

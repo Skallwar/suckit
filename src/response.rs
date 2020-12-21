@@ -7,17 +7,12 @@ pub enum ResponseData {
 /// Wrapper around `ResponseData`
 pub struct Response {
     pub data: ResponseData,
-    pub charset: Option<String>,
     pub filename: Option<String>,
 }
 
 impl Response {
     ///Create a new Response
-    pub fn new(data: ResponseData, charset: Option<String>, filename: Option<String>) -> Response {
-        Response {
-            data,
-            charset,
-            filename,
-        }
+    pub fn new(data: ResponseData, filename: Option<String>) -> Response {
+        Response { data, filename }
     }
 }
