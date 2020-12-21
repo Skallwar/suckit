@@ -91,9 +91,11 @@ impl Scraper {
         old_url_str.push_str(&new_url_str);
     }
 
-    fn find_charset(data: &str) -> Option<String> {
+    /// Find the charset of the webpage. ``data`` is not a String as this might not be utf8
+    fn find_charset(data: &[u8]) -> Option<String> {
+        let data_utf8 = unsafe { String::from_utf8_unchecked(Vec::from(data)) };
         let regex = Regex::new("<meta.*charset\\s*=\\s*([^\"\\s]+).*>").unwrap();
-        let captures = regex.captures(data);
+        let captures = regex.captures(&data_utf8);
 
         captures.map(|first| String::from(first.get(1).unwrap().as_str()))
     }
@@ -119,13 +121,13 @@ impl Scraper {
         transmitter: &Sender<(Url, i32)>,
         url: &Url,
         depth: i32,
-        data: &str,
+        data: &[u8],
     ) -> Vec<u8> {
         let charset_source_str = Self::find_charset(data).unwrap();
         let charset_source =
             encoding_rs::Encoding::for_label(&charset_source_str.as_bytes()).unwrap();
         let charset_utf8 = encoding_rs::UTF_8;
-        let utf8_data = Self::charset_convert(data.as_bytes(), charset_source, charset_utf8);
+        let utf8_data = Self::charset_convert(data, charset_source, charset_utf8);
 
         // println!("{}", utf8_data);
 

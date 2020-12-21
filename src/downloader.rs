@@ -116,7 +116,10 @@ impl Downloader {
                 };
 
                 let data = if Downloader::is_html(data_type) {
-                    ResponseData::Html(data.text().unwrap())
+                    let mut raw_data: Vec<u8> = Vec::new();
+                    data.copy_to(&mut raw_data).unwrap();
+                    // ResponseData::Html(data.text().unwrap())
+                    ResponseData::Html(raw_data)
                 } else {
                     let mut raw_data: Vec<u8> = Vec::new();
                     data.copy_to(&mut raw_data).unwrap();
