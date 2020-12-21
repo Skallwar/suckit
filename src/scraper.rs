@@ -1,6 +1,7 @@
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
 use encoding_rs::*;
+use lazy_static::lazy_static;
 use rand::Rng;
 use regex::Regex;
 use url::Url;
@@ -93,9 +94,12 @@ impl Scraper {
 
     /// Find the charset of the webpage. ``data`` is not a String as this might not be utf8
     fn find_charset(data: &[u8]) -> Option<String> {
+        lazy_static! {
+            static ref CHARSET_REGEX: Regex =
+                Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s]+).*>").unwrap();
+        }
         let data_utf8 = unsafe { String::from_utf8_unchecked(Vec::from(data)) };
-        let regex = Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s]+).*>").unwrap();
-        let captures = regex.captures(&data_utf8);
+        let captures = CHARSET_REGEX.captures_iter(&data_utf8).next();
 
         captures.map(|first| String::from(first.get(1).unwrap().as_str()))
     }

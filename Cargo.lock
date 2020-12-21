@@ -1568,6 +1568,7 @@ dependencies = [
  "crossbeam",
  "encoding_rs",
  "kuchiki",
+ "lazy_static",
  "percent-encoding",
  "rand 0.8.0",
  "regex",
