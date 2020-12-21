@@ -1,5 +1,7 @@
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
+use encoding_rs;
+use rand::Rng;
 use url::Url;
 
 use std::collections::HashMap;
@@ -8,13 +10,10 @@ use std::process;
 use std::sync::Mutex;
 use std::time;
 
-use rand::Rng;
-
-use super::downloader;
-
 use super::args;
 use super::disk;
 use super::dom;
+use super::downloader;
 use super::response;
 use super::url_helper;
 
@@ -98,7 +97,11 @@ impl Scraper {
         url: &Url,
         depth: i32,
         data: &str,
+        charset: &str,
     ) -> Vec<u8> {
+        let CharsetEncoder = encoding_rs::Encoding::for_label(charset.as_bytes());
+        let CharsetDecoder = encoding_rs::UTF_8;
+
         let dom = dom::Dom::new(data);
 
         dom.find_urls_as_strings()
@@ -127,9 +130,14 @@ impl Scraper {
         match scraper.downloader.get(&url) {
             Ok(response) => {
                 let data = match response.data {
-                    response::ResponseData::Html(data) => {
-                        Scraper::handle_html(scraper, transmitter, &url, depth, &data)
-                    }
+                    response::ResponseData::Html(data) => Scraper::handle_html(
+                        scraper,
+                        transmitter,
+                        &url,
+                        depth,
+                        &data,
+                        &response.charset,
+                    ),
                     response::ResponseData::Other(data) => data,
                 };
 
