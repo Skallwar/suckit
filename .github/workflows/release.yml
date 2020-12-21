@@ -1,4 +1,4 @@
-name: Kernel Unit Tests CI
+name: Release upload artifact
 
 on:
   release:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
+        target: [x86_64-unknown-linux-gnu]
 
     steps:
       - uses: actions/checkout@v2
@@ -16,11 +16,13 @@ jobs:
       - name: Rustup setup
         uses: actions-rs/toolchain@v1
         with:
+          toolchain: stable
+          default: true
           target: ${{ matrix.target }}
 
       - name: Build release
         run: |
-          cargo build --release
+          cargo build --release --target ${{ matrix.target }}
 
       - name: Find upload URL
         id: upload_url
@@ -36,4 +38,3 @@ jobs:
           upload_url: ${{ steps.upload_url.outputs.var }}
           asset_path: ./target/${{ matrix.target }}/suckit
           asset_name: suckit-${{ GITHUB_REF}}-${{ matrix.target }}
-
