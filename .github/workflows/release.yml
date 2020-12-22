@@ -24,15 +24,11 @@ jobs:
         run: |
           cargo build --release --target ${{ matrix.target }}
 
-      - name: Retrive tag
-        id: retrive_tag
-        run: |
-          echo "##[set-output name=tag;]$(echo ${GITHUB_REF} | cut -d / -f3)"
-
-      - name: Find upload URL
-        id: upload_url
-        run: |
-          echo "##[set-output name=url;] $(curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/skallwar/suckit/releases/tags/${{ steps.retrive_tag.outputs.tag }} | jq .upload_url -r)"
+      - name: Get release upload url
+        id: get_release
+        uses: bruceadams/get-release@v1.2.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload Release Asset
         id: upload-release-asset
@@ -40,7 +36,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.upload_url.outputs.url}}
+          upload_url: ${{ steps.get_release.outputs.upload_url}}
           asset_path: ./target/${{ matrix.target }}/release/suckit
-          asset_name: suckit-${{ steps.retrive_tag.outputs.tag }}-${{ matrix.target }}
+          asset_name: suckit-${{ steps.get_release.outputs.tag_name }}-${{ matrix.target }}
           asset_content_type: application/x-elf
