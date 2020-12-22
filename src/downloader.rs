@@ -105,28 +105,25 @@ impl Downloader {
         match req.send() {
             Ok(mut data) => {
                 let data_type = match data.headers().get("content-type") {
-                    Some(data_type) => data_type.to_str().unwrap(),
-                    None => "text/html",
+                    Some(data_type) => data_type.to_str().unwrap().to_string(),
+                    None => String::from("text/html"),
                 };
 
-                let filename = if !Downloader::is_html(data_type) {
+                let filename = if !Downloader::is_html(&data_type) {
                     Downloader::get_filename(data.headers())
                 } else {
                     None
                 };
 
-                let data = if Downloader::is_html(data_type) {
-                    let mut raw_data: Vec<u8> = Vec::new();
-                    data.copy_to(&mut raw_data).unwrap();
-                    // ResponseData::Html(data.text().unwrap())
+                let mut raw_data: Vec<u8> = Vec::new();
+                data.copy_to(&mut raw_data).unwrap();
+                let response_data = if Downloader::is_html(&data_type) {
                     ResponseData::Html(raw_data)
                 } else {
-                    let mut raw_data: Vec<u8> = Vec::new();
-                    data.copy_to(&mut raw_data).unwrap();
                     ResponseData::Other(raw_data)
                 };
 
-                Ok(Response::new(data, filename))
+                Ok(Response::new(response_data, filename))
             }
 
             Err(e) => {

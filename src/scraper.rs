@@ -1,11 +1,12 @@
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
-use encoding_rs::*;
+use encoding_rs::Encoding;
 use lazy_static::lazy_static;
 use rand::Rng;
 use regex::Regex;
 use url::Url;
 
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::process;
@@ -19,7 +20,7 @@ use super::downloader;
 use super::response;
 use super::url_helper;
 
-use crate::{error, info};
+use crate::{error, info, warn};
 
 /// Maximum number of empty recv() from the channel
 static MAX_EMPTY_RECEIVES: usize = 10;
@@ -92,16 +93,22 @@ impl Scraper {
         old_url_str.push_str(&new_url_str);
     }
 
-    /// Find the charset of the webpage. ``data`` is not a String as this might not be utf8
+    /// Find the charset of the webpage. ``data`` is not a String as this might not be utf8.
+    /// Returned String is lower cased
+    /// This is a hack and should be check in case of a bug
     fn find_charset(data: &[u8]) -> Option<String> {
         lazy_static! {
             static ref CHARSET_REGEX: Regex =
                 Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s]+).*>").unwrap();
         }
+
+        // We don't know the real charset yet. We hope that the charset is ASCII
+        // compatible, because Rust String are in UTF-8 (also ASCII compatible).
         let data_utf8 = unsafe { String::from_utf8_unchecked(Vec::from(data)) };
         let captures = CHARSET_REGEX.captures_iter(&data_utf8).next();
 
-        captures.map(|first| String::from(first.get(1).unwrap().as_str()))
+        // We use the first one, hopping we are in the <head> of the page...
+        captures.map(|first| String::from(first.get(1).unwrap().as_str().to_lowercase()))
     }
 
     /// Proceed to convert the data in utf8.
@@ -111,15 +118,23 @@ impl Scraper {
         charset_dest: &'static Encoding,
     ) -> Vec<u8> {
         let decode_result = charset_source.decode(data);
-        let decode_bytes = decode_result.0.into_owned();
+        let decode_bytes = decode_result.0.borrow();
 
-        let encode_result = charset_dest.encode(&decode_bytes);
+        let encode_result = charset_dest.encode(decode_bytes);
         let encode_bytes = encode_result.0.into_owned();
 
         encode_bytes
     }
 
-    ///Proces an html file: add new url to the chanel and prepare for offline navigation
+    /// Check if the charset require conversion
+    fn needs_charset_conversion(charset: &str) -> bool {
+        match charset {
+            "utf-8" => false,
+            _ => true,
+        }
+    }
+
+    /// Proces an html file: add new url to the chanel and prepare for offline navigation
     fn handle_html(
         scraper: &Scraper,
         transmitter: &Sender<(Url, i32)>,
@@ -127,13 +142,24 @@ impl Scraper {
         depth: i32,
         data: &[u8],
     ) -> Vec<u8> {
-        let charset_source_str = Self::find_charset(data).unwrap();
+        let charset_source_str = match Self::find_charset(data) {
+            Some(s) => s,
+            None => {
+                warn!("Charset not found for {}, defaulting to UTF-8", url);
+                String::from("utf-8")
+            }
+        };
+
+        let need_charset_conversion = Self::needs_charset_conversion(&charset_source_str);
+
         let charset_source =
             encoding_rs::Encoding::for_label(&charset_source_str.as_bytes()).unwrap();
         let charset_utf8 = encoding_rs::UTF_8;
-        let utf8_data = Self::charset_convert(data, charset_source, charset_utf8);
-
-        // println!("{}", utf8_data);
+        let utf8_data = if need_charset_conversion {
+            Self::charset_convert(data, charset_source, charset_utf8)
+        } else {
+            Vec::from(data)
+        };
 
         let dom = dom::Dom::new(&String::from_utf8(utf8_data).unwrap());
 
@@ -157,7 +183,11 @@ impl Scraper {
 
         let utf8_data = dom.serialize().into_bytes();
 
-        Self::charset_convert(&utf8_data, charset_utf8, charset_source)
+        if need_charset_conversion {
+            Self::charset_convert(&utf8_data, charset_utf8, charset_source)
+        } else {
+            utf8_data
+        }
     }
 
     /// Process a single URL
