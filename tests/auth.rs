@@ -2,7 +2,6 @@
 
 mod fixtures;
 
-use fixtures::get_file_count_with_pattern;
 use std::fs::read_dir;
 use std::process::Command;
 use std::process::Stdio;

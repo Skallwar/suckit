@@ -161,7 +161,7 @@ impl Scraper {
             Vec::from(data)
         };
 
-        let dom = dom::Dom::new(&String::from_utf8(utf8_data).unwrap());
+        let dom = dom::Dom::new(&String::from_utf8_lossy(&utf8_data).into_owned());
 
         dom.find_urls_as_strings()
             .into_iter()
