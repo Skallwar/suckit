@@ -8,14 +8,14 @@ use std::process::Command;
 use std::process::Stdio;
 use std::sync::Once;
 
-const ADDR: &'static str = "http://0.0.0.0:8000";
+const PAGE: &'static str = "tests/fixtures/index.html";
 static START: Once = Once::new();
 
 #[test]
 fn test_include_exclude() {
     // Spawn a single instance of a local http server usable by all tests in this module.
     START.call_once(|| {
-        fixtures::spawn_local_http_server(false);
+        fixtures::spawn_local_http_server(PAGE, false);
     });
 
     // Tests below are grouped together as they depend on the local_http_server above.
@@ -28,7 +28,7 @@ fn test_include_exclude() {
 fn include_filter() {
     let output_dir = "w2";
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[ADDR, "-o", "w2", "-i", "mp[3-4]", "-j", "16"])
+        .args(&[fixtures::HTTP_ADDR, "-o", "w2", "-i", "mp[3-4]", "-j", "16"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
@@ -49,7 +49,15 @@ fn include_filter() {
 fn include_multiple_filters() {
     let output_dir = "w1";
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[ADDR, "-o", output_dir, "-i", "(mp[3-4])|(txt)", "-j", "16"])
+        .args(&[
+            fixtures::HTTP_ADDR,
+            "-o",
+            output_dir,
+            "-i",
+            "(mp[3-4])|(txt)",
+            "-j",
+            "16",
+        ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
@@ -68,7 +76,15 @@ fn include_multiple_filters() {
 fn exclude_filter() {
     let output_dir = "w3";
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[ADDR, "-o", output_dir, "-e", "jpe?g", "-j", "16"])
+        .args(&[
+            fixtures::HTTP_ADDR,
+            "-o",
+            output_dir,
+            "-e",
+            "jpe?g",
+            "-j",
+            "16",
+        ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()

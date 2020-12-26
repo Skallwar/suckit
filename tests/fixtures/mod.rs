@@ -4,12 +4,13 @@ use std::process::Stdio;
 use std::thread;
 use tiny_http::{Header, Response, Server};
 
-const PAGE: &'static str = "tests/fixtures/index.html";
+pub const HTTP_ADDR: &'static str = "http://0.0.0.0:8000";
+const ADDR: &'static str = "0.0.0.0:8000";
 const AUTH_HEADER: &str = "Authorization";
 const AUTH_CREDENTIALS: &str = "Basic dXNlcm5hbWU6cGFzc3dvcmQ="; // base64-encoded "username:password"
 
-pub fn spawn_local_http_server(requires_auth: bool) {
-    let server = Server::http("0.0.0.0:8000").unwrap();
+pub fn spawn_local_http_server(page: &'static str, requires_auth: bool) {
+    let server = Server::http(ADDR).unwrap();
     println!("Spawning http server");
     thread::spawn(move || {
         for request in server.incoming_requests() {
@@ -26,7 +27,7 @@ pub fn spawn_local_http_server(requires_auth: bool) {
                 response.add_header(h);
                 request.respond(response).unwrap();
             } else {
-                let response = Response::from_file(File::open(PAGE).unwrap());
+                let response = Response::from_file(File::open(page).unwrap());
                 request.respond(response).unwrap();
             };
         }
@@ -76,4 +77,9 @@ pub fn get_file_count_with_pattern(pattern: &str, dir: &str) -> Result<usize, ()
         }
     }
     Err(())
+}
+
+pub fn do_vecs_match<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
+    let matching = a.iter().zip(b.iter()).filter(|&(a, b)| a == b).count();
+    matching == a.len() && matching == b.len()
 }
