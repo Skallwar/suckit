@@ -96,10 +96,10 @@ impl Scraper {
     /// Find the charset of the webpage. ``data`` is not a String as this might not be utf8.
     /// Returned String is lower cased
     /// This is a hack and should be check in case of a bug
-    fn find_charset(data: &[u8]) -> Option<String> {
+    fn find_charset(data: &[u8], http_charset: Option<String>) -> Option<String> {
         lazy_static! {
             static ref CHARSET_REGEX: Regex =
-                Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s]+).*>").unwrap();
+                Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s;]+).*>").unwrap();
         }
 
         // We don't know the real charset yet. We hope that the charset is ASCII
@@ -107,8 +107,11 @@ impl Scraper {
         let data_utf8 = unsafe { String::from_utf8_unchecked(Vec::from(data)) };
         let captures = CHARSET_REGEX.captures_iter(&data_utf8).next();
 
-        // We use the first one, hopping we are in the <head> of the page...
-        captures.map(|first| String::from(first.get(1).unwrap().as_str().to_lowercase()))
+        // We use the first one, hopping we are in the <head> of the page... or if nothing is found
+        // we used the http charset (if any).
+        captures
+            .map(|first| String::from(first.get(1).unwrap().as_str().to_lowercase()))
+            .or(http_charset)
     }
 
     /// Proceed to convert the data in utf8.
@@ -141,8 +144,9 @@ impl Scraper {
         url: &Url,
         depth: i32,
         data: &[u8],
+        http_charset: Option<String>,
     ) -> Vec<u8> {
-        let charset_source_str = match Self::find_charset(data) {
+        let charset_source_str = match Self::find_charset(data, http_charset) {
             Some(s) => s,
             None => {
                 warn!("Charset not found for {}, defaulting to UTF-8", url);
@@ -195,9 +199,14 @@ impl Scraper {
         match scraper.downloader.get(&url) {
             Ok(response) => {
                 let data = match response.data {
-                    response::ResponseData::Html(data) => {
-                        Scraper::handle_html(scraper, transmitter, &url, depth, &data)
-                    }
+                    response::ResponseData::Html(data) => Scraper::handle_html(
+                        scraper,
+                        transmitter,
+                        &url,
+                        depth,
+                        &data,
+                        response.charset,
+                    ),
                     response::ResponseData::Other(data) => data,
                 };
 

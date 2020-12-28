@@ -8,11 +8,16 @@ pub enum ResponseData {
 pub struct Response {
     pub data: ResponseData,
     pub filename: Option<String>,
+    pub charset: Option<String>,
 }
 
 impl Response {
     ///Create a new Response
-    pub fn new(data: ResponseData, filename: Option<String>) -> Response {
-        Response { data, filename }
+    pub fn new(data: ResponseData, filename: Option<String>, charset: Option<String>) -> Response {
+        Response {
+            data,
+            filename,
+            charset,
+        }
     }
 }

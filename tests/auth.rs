@@ -14,7 +14,7 @@ static START: Once = Once::new();
 fn test_auth() {
     // Spawn a single instance of a local http server usable by all tests in this module.
     START.call_once(|| {
-        fixtures::spawn_local_http_server(PAGE, true);
+        fixtures::spawn_local_http_server(PAGE, true, None);
     });
 
     // Tests below are grouped together as they depend on the local_http_server above.

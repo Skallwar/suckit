@@ -13,7 +13,7 @@ static START: Once = Once::new();
 fn test_html_charset_not_found() {
     // Spawn a single instance of a local http server usable by all tests in this module.
     START.call_once(|| {
-        fixtures::spawn_local_http_server(PAGE_NO_META, false);
+        fixtures::spawn_local_http_server(PAGE_NO_META, false, None);
     });
 
     let output_dir = "charset_html_not_found";

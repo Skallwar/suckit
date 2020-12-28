@@ -6,14 +6,16 @@ use std::fs;
 use std::process::{Command, Stdio};
 use std::sync::Once;
 
-const PAGE_META: &'static str = "tests/fixtures/charset_test_html.html";
+use lazy_static::lazy_static;
+
+const PAGE_NO_META: &'static str = "tests/fixtures/charset_test_html_no_meta.html";
 static START: Once = Once::new();
 
 #[test]
-fn test_html_charset_found() {
+fn test_http_charset_found() {
     // Spawn a single instance of a local http server usable by all tests in this module.
     START.call_once(|| {
-        fixtures::spawn_local_http_server(PAGE_META, false, None);
+        fixtures::spawn_local_http_server(PAGE_NO_META, false, None);
     });
 
     let output_dir = "charset_html_found";
@@ -32,10 +34,10 @@ fn test_html_charset_found() {
         .unwrap()
         .path(); // There is only one file in the directory
 
-    let data_source = fs::read(PAGE_META).unwrap();
+    let data_source = fs::read(PAGE_NO_META).unwrap();
     let data_downloaded = fs::read(file_path).unwrap();
 
-    assert!(fixtures::do_vecs_match(&data_source, &data_downloaded));
+    assert!(!fixtures::do_vecs_match(&data_source, &data_downloaded));
 
     fs::remove_dir_all(output_dir).unwrap();
 }
