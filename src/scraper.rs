@@ -166,13 +166,17 @@ impl Scraper {
         };
 
         let dom = dom::Dom::new(&String::from_utf8_lossy(&utf8_data).into_owned());
+        let current_path = {
+            let path_map = scraper.path_map.lock().unwrap();
+            path_map.get(url.as_str()).unwrap()
+        };
 
         dom.find_urls_as_strings()
             .into_iter()
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
                 let next_full_url = url.join(&next_url).unwrap();
-                let path = url_helper::to_path(&next_full_url);
+                let path = url_helper::to_path(&next_full_url, Some(&current_path));
 
                 if scraper.map_url_path(&next_full_url, path)
                     && (scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth)

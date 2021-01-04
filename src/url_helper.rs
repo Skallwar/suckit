@@ -12,23 +12,36 @@ pub fn encode(path: &str) -> String {
 }
 
 ///Convert an Url to the corresponding path
-pub fn to_path(url: &Url) -> String {
+pub fn to_path(url: &Url, current_path: Option<&str>) -> String {
     let fragment = url.fragment();
-    let mut url = url.clone();
-    url.set_fragment(None);
+    let domain = url.domain().unwrap();
+    let path = url.path();
 
-    let url = url.as_str().split("://").collect::<Vec<&str>>()[1];
+    // println!(
+    //     "Domain = {}, fragment = {:?}, path = {}",
+    //     domain, fragment, path
+    // );
 
-    let mut url = url.replace('/', "_").replace('.', "_");
-    if url.len() >= FILE_NAME_MAX_LENGTH {
-        url = url.split_at(FILE_NAME_MAX_LENGTH).0.to_string(); //Shrink too long file name
+    let mut path = format!("{}{}", domain, path);
+    if path == domain {
+        path = format!("{}/index", path);
     }
-    let url = url.trim_end_matches('_'); //Remaining '/'
 
-    match fragment {
-        Some(fragment) => format!("{}#{}", url.to_string(), fragment),
-        None => url.to_string(),
-    }
+    books.com/test/index.html
+    books.com/lol.png
+
+    match current_path {
+        Some(current_path) => {
+            let full_path = Path::new(path);
+            let current_path = Path::new(current_path);
+            let common_path = common_path::common_path(full_path, current_path);
+            let relative_path = full_path.trim_start_matches(common_path);
+            println!("Full_path = {}, 
+        }
+        _ => ()
+    };
+
+    path
 }
 
 #[cfg(test)]
