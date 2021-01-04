@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # Number of tests for each bench-set
-TEST_RETRIES = 10
+TEST_RETRIES = 20
 
 # File to store the results
 FILENAME = "speed.csv"
@@ -9,8 +9,8 @@ FILENAME = "speed.csv"
 # Path to the suckit binary
 SUCKIT = "suckit"
 
-# URL to download
-URL = "http://books.toscrape.com"
+# URL to download: localhost
+URL = "http://0.0.0.0"
 
 # Path to store the downloaded data
 PATH = "/tmp/suckit_speed"
