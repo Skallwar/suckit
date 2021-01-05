@@ -1,5 +1,8 @@
 use super::response::{Response, ResponseData};
 use std::collections::HashMap;
+
+use lazy_static::lazy_static;
+use regex::Regex;
 use url::Url;
 
 use crate::warn;
@@ -104,26 +107,48 @@ impl Downloader {
         };
         match req.send() {
             Ok(mut data) => {
-                let data_type = match data.headers().get("content-type") {
-                    Some(data_type) => data_type.to_str().unwrap(),
-                    None => "text/html",
-                };
+                lazy_static! {
+                    static ref DATA_TYPE_REGEX: Regex =
+                        Regex::new("^.*(\\b[a-z]+/[a-z-+\\.]+).*$").unwrap();
+                    static ref CHARSET_REGEX: Regex =
+                        Regex::new("^.*charset\\s*=\\s*\"?([^\"\\s;]+).*$").unwrap();
+                }
 
-                let filename = if !Downloader::is_html(data_type) {
+                let (data_type, charset): (String, Option<String>) =
+                    match data.headers().get("content-type") {
+                        Some(content_type_header) => {
+                            let content_type = content_type_header.to_str().unwrap();
+                            let data_type_captures =
+                                DATA_TYPE_REGEX.captures_iter(&content_type).nth(0);
+                            let data_type = data_type_captures
+                                .map_or(String::from("text/html"), |first| {
+                                    String::from(first.get(1).unwrap().as_str().to_lowercase())
+                                });
+                            let charset_captures =
+                                CHARSET_REGEX.captures_iter(&content_type).nth(0);
+                            let charset = charset_captures.map(|first| {
+                                String::from(first.get(1).unwrap().as_str().to_lowercase())
+                            });
+                            (data_type, charset)
+                        }
+                        None => (String::from("text/html"), None),
+                    };
+
+                let filename = if !Downloader::is_html(&data_type) {
                     Downloader::get_filename(data.headers())
                 } else {
                     None
                 };
 
-                let data = if Downloader::is_html(data_type) {
-                    ResponseData::Html(data.text().unwrap())
+                let mut raw_data: Vec<u8> = Vec::new();
+                data.copy_to(&mut raw_data).unwrap();
+                let response_data = if Downloader::is_html(&data_type) {
+                    ResponseData::Html(raw_data)
                 } else {
-                    let mut raw_data: Vec<u8> = Vec::new();
-                    data.copy_to(&mut raw_data).unwrap();
                     ResponseData::Other(raw_data)
                 };
 
-                Ok(Response::new(data, filename))
+                Ok(Response::new(response_data, filename, charset))
             }
 
             Err(e) => {
