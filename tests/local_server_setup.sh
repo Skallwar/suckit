@@ -27,5 +27,7 @@ if [[ ! -d linux ]]; then
     cd ..
 fi
 
-# Start up the local python server. Choosing port 80 requires sudo privileges
-sudo python3 -m http.server 80
+printf "\nWEBSERVER UP\n"
+
+# Start up the local python server
+python3 -m http.server
