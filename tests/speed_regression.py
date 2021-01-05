@@ -10,7 +10,7 @@ FILENAME = "speed.csv"
 SUCKIT = "suckit"
 
 # URL to download: localhost
-URL = "http://0.0.0.0"
+URL = "http://0.0.0.0:8000"
 
 # Path to store the downloaded data
 PATH = "/tmp/suckit_speed"
@@ -22,6 +22,18 @@ import shutil
 import subprocess
 import time
 from termcolor import colored
+
+def start_webserver():
+    print("Launching webserver")
+
+    webserver_pid = subprocess.Popen(["./local_server_setup.sh"], stdout = subprocess.PIPE)
+
+    while webserver_pid.stdout.readline() != b"WEBSERVER UP\n":
+        print("Waiting on webserver...", end = "\r")
+
+    print("Webserver launched")
+
+    return webserver_pid
 
 def parse_args():
     global FILENAME
@@ -120,4 +132,14 @@ def main():
     shutil.rmtree(PATH)
 
 if __name__ == "__main__":
-    main()
+    webserver_pid = None
+
+    try:
+        webserver_pid = start_webserver()
+
+        main()
+
+        # Terminate the webserver
+        webserver_pid.kill()
+    except: # Kill the webserver if an exception occurs
+        webserver_pid.kill()
