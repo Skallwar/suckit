@@ -6,3 +6,6 @@
 tags
 
 .idea/
+
+# Ignore local web server folder
+tests/local_server
