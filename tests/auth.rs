@@ -2,20 +2,19 @@
 
 mod fixtures;
 
-use fixtures::get_file_count_with_pattern;
 use std::fs::read_dir;
 use std::process::Command;
 use std::process::Stdio;
 use std::sync::Once;
 
-const ADDR: &'static str = "http://0.0.0.0:8000";
+const PAGE: &'static str = "tests/fixtures/index.html";
 static START: Once = Once::new();
 
 #[test]
 fn test_auth() {
     // Spawn a single instance of a local http server usable by all tests in this module.
     START.call_once(|| {
-        fixtures::spawn_local_http_server(true);
+        fixtures::spawn_local_http_server(PAGE, true, None);
     });
 
     // Tests below are grouped together as they depend on the local_http_server above.
@@ -28,7 +27,7 @@ fn auth_different_host() {
     let output_dir = "w4";
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[
-            ADDR,
+            fixtures::HTTP_ADDR,
             "-o",
             "w4",
             "-a",
@@ -54,7 +53,15 @@ fn auth_different_host() {
 fn auth_valid() {
     let output_dir = "w5";
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[ADDR, "-o", "w5", "-a", "username password", "-j", "16"])
+        .args(&[
+            fixtures::HTTP_ADDR,
+            "-o",
+            "w5",
+            "-a",
+            "username password",
+            "-j",
+            "16",
+        ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()

@@ -1,24 +1,26 @@
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
+use encoding_rs::Encoding;
+use lazy_static::lazy_static;
+use rand::Rng;
+use regex::Regex;
 use url::Url;
 
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::process;
 use std::sync::Mutex;
 use std::time;
 
-use rand::Rng;
-
-use super::downloader;
-
 use super::args;
 use super::disk;
 use super::dom;
+use super::downloader;
 use super::response;
 use super::url_helper;
 
-use crate::{error, info};
+use crate::{error, info, warn};
 
 /// Maximum number of empty recv() from the channel
 static MAX_EMPTY_RECEIVES: usize = 10;
@@ -91,15 +93,79 @@ impl Scraper {
         old_url_str.push_str(&new_url_str);
     }
 
-    ///Proces an html file: add new url to the chanel and prepare for offline navigation
+    /// Find the charset of the webpage. ``data`` is not a String as this might not be utf8.
+    /// Returned String is lower cased
+    /// This is a hack and should be check in case of a bug
+    fn find_charset(data: &[u8], http_charset: Option<String>) -> Option<String> {
+        lazy_static! {
+            static ref CHARSET_REGEX: Regex =
+                Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s;]+).*>").unwrap();
+        }
+
+        // We don't know the real charset yet. We hope that the charset is ASCII
+        // compatible, because Rust String are in UTF-8 (also ASCII compatible).
+        let data_utf8 = unsafe { String::from_utf8_unchecked(Vec::from(data)) };
+        let captures = CHARSET_REGEX.captures_iter(&data_utf8).next();
+
+        // We use the first one, hopping we are in the <head> of the page... or if nothing is found
+        // we used the http charset (if any).
+        captures
+            .map(|first| String::from(first.get(1).unwrap().as_str().to_lowercase()))
+            .or(http_charset)
+    }
+
+    /// Proceed to convert the data in utf8.
+    fn charset_convert(
+        data: &[u8],
+        charset_source: &'static Encoding,
+        charset_dest: &'static Encoding,
+    ) -> Vec<u8> {
+        let decode_result = charset_source.decode(data);
+        let decode_bytes = decode_result.0.borrow();
+
+        let encode_result = charset_dest.encode(decode_bytes);
+        let encode_bytes = encode_result.0.into_owned();
+
+        encode_bytes
+    }
+
+    /// Check if the charset require conversion
+    fn needs_charset_conversion(charset: &str) -> bool {
+        match charset {
+            "utf-8" => false,
+            _ => true,
+        }
+    }
+
+    /// Proces an html file: add new url to the chanel and prepare for offline navigation
     fn handle_html(
         scraper: &Scraper,
         transmitter: &Sender<(Url, i32)>,
         url: &Url,
         depth: i32,
-        data: &str,
+        data: &[u8],
+        http_charset: Option<String>,
     ) -> Vec<u8> {
-        let dom = dom::Dom::new(data);
+        let charset_source_str = match Self::find_charset(data, http_charset) {
+            Some(s) => s,
+            None => {
+                warn!("Charset not found for {}, defaulting to UTF-8", url);
+                String::from("utf-8")
+            }
+        };
+
+        let need_charset_conversion = Self::needs_charset_conversion(&charset_source_str);
+
+        let charset_source =
+            encoding_rs::Encoding::for_label(&charset_source_str.as_bytes()).unwrap();
+        let charset_utf8 = encoding_rs::UTF_8;
+        let utf8_data = if need_charset_conversion {
+            Self::charset_convert(data, charset_source, charset_utf8)
+        } else {
+            Vec::from(data)
+        };
+
+        let dom = dom::Dom::new(&String::from_utf8_lossy(&utf8_data).into_owned());
 
         dom.find_urls_as_strings()
             .into_iter()
@@ -119,7 +185,13 @@ impl Scraper {
                 scraper.fix_domtree(next_url, &next_full_url);
             });
 
-        dom.serialize().into_bytes()
+        let utf8_data = dom.serialize().into_bytes();
+
+        if need_charset_conversion {
+            Self::charset_convert(&utf8_data, charset_utf8, charset_source)
+        } else {
+            utf8_data
+        }
     }
 
     /// Process a single URL
@@ -127,9 +199,14 @@ impl Scraper {
         match scraper.downloader.get(&url) {
             Ok(response) => {
                 let data = match response.data {
-                    response::ResponseData::Html(data) => {
-                        Scraper::handle_html(scraper, transmitter, &url, depth, &data)
-                    }
+                    response::ResponseData::Html(data) => Scraper::handle_html(
+                        scraper,
+                        transmitter,
+                        &url,
+                        depth,
+                        &data,
+                        response.charset,
+                    ),
                     response::ResponseData::Other(data) => data,
                 };
 

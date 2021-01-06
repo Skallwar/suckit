@@ -29,7 +29,8 @@ your disk.
 |`-u, --user-agent`|User agent to be used for sending requests|
 |`-i, --include`|Specify a regex to include pages that match this pattern|
 |`-e, --exclude`|Specify a regex to exclude pages that match this pattern|
-|`-a, --auth` |Provide usernames and passwords for the downloader to use|
+|`-a, --auth`|Provide usernames and passwords for the downloader to use|
+|`--dry-run`|Do everything without saving the files to the disk|
 
 # Example
 
