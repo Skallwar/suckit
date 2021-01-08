@@ -2,6 +2,7 @@ use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
 use encoding_rs::Encoding;
 use lazy_static::lazy_static;
+use pathdiff;
 use rand::Rng;
 use regex::Regex;
 use url::Url;
@@ -9,6 +10,7 @@ use url::Url;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::path::Path;
 use std::process;
 use std::sync::Mutex;
 use std::time;
@@ -82,15 +84,14 @@ impl Scraper {
         }
     }
 
-    /// Fix the URLs contained in the DOM-tree so they point to each other
-    fn fix_domtree(&self, old_url_str: &mut String, new_url: &Url) {
-        let path_map = self.path_map.lock().unwrap();
-        let path = path_map.get(new_url.as_str()).unwrap();
+    /// Fix the URLs contained in the DOM-tree so they point to each other relatif to each other
+    fn fix_domtree(&self, dom_url: &mut String, source_path: &str, dest_path: &str) {
+        let source_path_parent = Path::new(source_path).parent().unwrap().to_str().unwrap(); //Unwrap should be safe, there will alway be at least .../index.html
+        let diff_path = pathdiff::diff_paths(dest_path, source_path_parent).unwrap();
+        let relative_path = diff_path.as_path().to_str().unwrap();
 
-        let new_url_str = url_helper::encode(path);
-
-        old_url_str.clear();
-        old_url_str.push_str(&new_url_str);
+        dom_url.clear();
+        dom_url.push_str(&relative_path);
     }
 
     /// Find the charset of the webpage. ``data`` is not a String as this might not be utf8.
@@ -166,19 +167,22 @@ impl Scraper {
         };
 
         let dom = dom::Dom::new(&String::from_utf8_lossy(&utf8_data).into_owned());
-        let current_path = {
-            let path_map = scraper.path_map.lock().unwrap();
-            path_map.get(url.as_str()).unwrap()
-        };
+        let source_path = scraper
+            .path_map
+            .lock()
+            .unwrap()
+            .get(url.as_str())
+            .unwrap()
+            .clone();
 
         dom.find_urls_as_strings()
             .into_iter()
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
                 let next_full_url = url.join(&next_url).unwrap();
-                let path = url_helper::to_path(&next_full_url, Some(&current_path));
+                let path = url_helper::to_path(&next_full_url, None);
 
-                if scraper.map_url_path(&next_full_url, path)
+                if scraper.map_url_path(&next_full_url, path.clone())
                     && (scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth)
                 {
                     let mut next_full_download_url = next_full_url.clone();
@@ -186,7 +190,7 @@ impl Scraper {
                     Scraper::push(transmitter, next_full_download_url, depth + 1);
                 }
 
-                scraper.fix_domtree(next_url, &next_full_url);
+                scraper.fix_domtree(next_url, &source_path, &path);
             });
 
         let utf8_data = dom.serialize().into_bytes();
@@ -253,7 +257,10 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
-        self.map_url_path(&self.args.origin, url_helper::to_path(&self.args.origin));
+        self.map_url_path(
+            &self.args.origin,
+            url_helper::to_path(&self.args.origin, None),
+        );
         Scraper::push(&self.transmitter, self.args.origin.clone(), 0);
 
         thread::scope(|thread_scope| {

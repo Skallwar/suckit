@@ -17,29 +17,10 @@ pub fn to_path(url: &Url, current_path: Option<&str>) -> String {
     let domain = url.domain().unwrap();
     let path = url.path();
 
-    // println!(
-    //     "Domain = {}, fragment = {:?}, path = {}",
-    //     domain, fragment, path
-    // );
-
     let mut path = format!("{}{}", domain, path);
-    if path == domain {
-        path = format!("{}/index", path);
+    if path.ends_with("/") {
+        path = format!("{}index.html", path);
     }
-
-    books.com/test/index.html
-    books.com/lol.png
-
-    match current_path {
-        Some(current_path) => {
-            let full_path = Path::new(path);
-            let current_path = Path::new(current_path);
-            let common_path = common_path::common_path(full_path, current_path);
-            let relative_path = full_path.trim_start_matches(common_path);
-            println!("Full_path = {}, 
-        }
-        _ => ()
-    };
 
     path
 }
