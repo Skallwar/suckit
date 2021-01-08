@@ -180,7 +180,7 @@ impl Scraper {
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
                 let next_full_url = url.join(&next_url).unwrap();
-                let path = url_helper::to_path(&next_full_url, None);
+                let path = url_helper::to_path(&next_full_url);
 
                 if scraper.map_url_path(&next_full_url, path.clone())
                     && (scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth)
@@ -257,10 +257,7 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
-        self.map_url_path(
-            &self.args.origin,
-            url_helper::to_path(&self.args.origin, None),
-        );
+        self.map_url_path(&self.args.origin, url_helper::to_path(&self.args.origin));
         Scraper::push(&self.transmitter, self.args.origin.clone(), 0);
 
         thread::scope(|thread_scope| {
