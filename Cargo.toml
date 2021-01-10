@@ -24,12 +24,10 @@ include = [
 [dependencies]
 structopt = "^0.3"
 crossbeam = "^0.8"
-reqwest = { version = "^0.10", features = ["blocking", "cookies"] }
+reqwest = { version = "^0.11", features = ["blocking", "cookies"] }
 kuchiki = "^0.8"
 colored = "2.0"
 chrono = "^0.4"
-bytes = "^0.6"
-percent-encoding = "^2.1"
 url = "^2.2"
 rand = "^0.8"
 regex = "^1.4"

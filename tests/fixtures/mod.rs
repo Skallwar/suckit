@@ -1,6 +1,4 @@
 use std::fs::File;
-use std::process::Command;
-use std::process::Stdio;
 use std::thread;
 
 use subprocess::Exec;
@@ -67,6 +65,7 @@ pub fn get_file_count_with_pattern(pattern: &str, dir: &str) -> Result<usize, ()
     // Command being run: `ls | grep pattern | wc -w`
 
     let cmd = {
+        // Pipe ('|') is overloaded here and do a real pipe
         Exec::shell(format!("ls {}", dir))
             | Exec::shell(format!("grep '{}'", pattern))
             | Exec::shell("wc -l")
@@ -81,41 +80,6 @@ pub fn get_file_count_with_pattern(pattern: &str, dir: &str) -> Result<usize, ()
         }
         _ => Err(()),
     }
-
-    // let mut du_output_child = Command::new("ls")
-    //     .args(&[dir])
-    //     .stdout(Stdio::piped())
-    //     .spawn()
-    //     .unwrap();
-    //
-    // if let Some(du_output) = du_output_child.stdout.take() {
-    //     println!("LS OUTPUT of {} = {:?}", dir, du_output);
-    //     let mut sort_output_child = Command::new("egrep")
-    //         .arg(pattern)
-    //         .stdin(du_output)
-    //         .stdout(Stdio::piped())
-    //         .spawn()
-    //         .unwrap();
-    //
-    //     du_output_child.wait().unwrap();
-    //
-    //     if let Some(sort_output) = sort_output_child.stdout.take() {
-    //         let head_output_child = Command::new("wc")
-    //             .args(&["-w"])
-    //             .stdin(sort_output)
-    //             .stdout(Stdio::piped())
-    //             .spawn()
-    //             .unwrap();
-    //
-    //         let head_stdout = head_output_child.wait_with_output().unwrap();
-    //         sort_output_child.wait().unwrap();
-    //         return Ok(String::from_utf8(head_stdout.stdout)
-    //             .unwrap()
-    //             .trim()
-    //             .parse()
-    //             .unwrap());
-    //     }
-    // }
 }
 
 pub fn do_vecs_match<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {

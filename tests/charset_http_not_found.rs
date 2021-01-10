@@ -6,8 +6,6 @@ use std::fs;
 use std::process::{Command, Stdio};
 use std::sync::Once;
 
-use lazy_static::lazy_static;
-
 const PAGE_NO_META: &'static str = "tests/fixtures/charset_test_html_no_meta.html";
 const IP: &'static str = "0.0.0.0";
 static START: Once = Once::new();
