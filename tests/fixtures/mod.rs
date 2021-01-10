@@ -65,7 +65,7 @@ pub fn get_file_count_with_pattern(pattern: &str, dir: &str) -> Result<usize, ()
     // Command being run: `ls | grep pattern | wc -w`
 
     let cmd = {
-        // Pipe ('|') is overloaded here and do a real pipe
+        // Pipe ('|') is overloaded here and does a real pipe
         Exec::shell(format!("ls {}", dir))
             | Exec::shell(format!("grep '{}'", pattern))
             | Exec::shell("wc -l")
