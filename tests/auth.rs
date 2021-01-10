@@ -8,6 +8,7 @@ use std::process::Stdio;
 use std::sync::Once;
 
 const PAGE: &'static str = "tests/fixtures/index.html";
+const IP: &'static str = "0.0.0.0";
 static START: Once = Once::new();
 
 #[test]
@@ -42,7 +43,7 @@ fn auth_different_host() {
 
     let status = cmd.wait().unwrap();
     assert!(status.success());
-    let paths = read_dir(output_dir).unwrap();
+    let paths = read_dir(format!("{}/{}", output_dir, IP)).unwrap();
     // Only the initial invalid response file should be present
     assert_eq!(paths.count(), 1);
 
@@ -69,9 +70,11 @@ fn auth_valid() {
 
     let status = cmd.wait().unwrap();
     assert!(status.success());
-    let paths = read_dir(output_dir).unwrap();
+    let paths = read_dir(format!("{}/{}", output_dir, IP)).unwrap();
     // Should load multiple paths, not just the invalid auth response
-    assert!(paths.count() > 1);
+    let paths_count = paths.count();
+    println!("Paths.count() = {}", paths_count);
+    assert!(paths_count > 1);
 
     std::fs::remove_dir_all(output_dir).unwrap();
 }

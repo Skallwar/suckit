@@ -39,3 +39,4 @@ pathdiff = "^0.2"
 
 [dev-dependencies]
 tiny_http = "^0.7"
+subprocess = "^0.2"

@@ -2,6 +2,8 @@ use std::fs::File;
 use std::process::Command;
 use std::process::Stdio;
 use std::thread;
+
+use subprocess::Exec;
 use tiny_http::{Header, Response, Server};
 
 pub const HTTP_ADDR: &'static str = "http://0.0.0.0:8000";
@@ -62,41 +64,58 @@ fn check_auth_credentials(auth_header: Option<&Header>) -> bool {
 }
 
 pub fn get_file_count_with_pattern(pattern: &str, dir: &str) -> Result<usize, ()> {
-    // Command being run: `ls | grep .mp3 | wc -w`
-    let mut du_output_child = Command::new("ls")
-        .args(&[dir])
-        .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
+    // Command being run: `ls | grep pattern | wc -w`
 
-    if let Some(du_output) = du_output_child.stdout.take() {
-        let mut sort_output_child = Command::new("egrep")
-            .arg(pattern)
-            .stdin(du_output)
-            .stdout(Stdio::piped())
-            .spawn()
-            .unwrap();
-
-        du_output_child.wait().unwrap();
-
-        if let Some(sort_output) = sort_output_child.stdout.take() {
-            let head_output_child = Command::new("wc")
-                .args(&["-w"])
-                .stdin(sort_output)
-                .stdout(Stdio::piped())
-                .spawn()
-                .unwrap();
-
-            let head_stdout = head_output_child.wait_with_output().unwrap();
-            sort_output_child.wait().unwrap();
-            return Ok(String::from_utf8(head_stdout.stdout)
-                .unwrap()
-                .trim()
-                .parse()
-                .unwrap());
-        }
+    let cmd = {
+        Exec::shell(format!("ls {}", dir))
+            | Exec::shell(format!("grep '{}'", pattern))
+            | Exec::shell("wc -l")
     }
-    Err(())
+    .capture();
+
+    match cmd {
+        Ok(capture_data) => {
+            let stdout = capture_data.stdout_str();
+            let count = stdout.trim().parse::<usize>().unwrap();
+            Ok(count)
+        }
+        _ => Err(()),
+    }
+
+    // let mut du_output_child = Command::new("ls")
+    //     .args(&[dir])
+    //     .stdout(Stdio::piped())
+    //     .spawn()
+    //     .unwrap();
+    //
+    // if let Some(du_output) = du_output_child.stdout.take() {
+    //     println!("LS OUTPUT of {} = {:?}", dir, du_output);
+    //     let mut sort_output_child = Command::new("egrep")
+    //         .arg(pattern)
+    //         .stdin(du_output)
+    //         .stdout(Stdio::piped())
+    //         .spawn()
+    //         .unwrap();
+    //
+    //     du_output_child.wait().unwrap();
+    //
+    //     if let Some(sort_output) = sort_output_child.stdout.take() {
+    //         let head_output_child = Command::new("wc")
+    //             .args(&["-w"])
+    //             .stdin(sort_output)
+    //             .stdout(Stdio::piped())
+    //             .spawn()
+    //             .unwrap();
+    //
+    //         let head_stdout = head_output_child.wait_with_output().unwrap();
+    //         sort_output_child.wait().unwrap();
+    //         return Ok(String::from_utf8(head_stdout.stdout)
+    //             .unwrap()
+    //             .trim()
+    //             .parse()
+    //             .unwrap());
+    //     }
+    // }
 }
 
 pub fn do_vecs_match<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
