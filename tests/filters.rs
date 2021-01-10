@@ -9,6 +9,7 @@ use std::process::Stdio;
 use std::sync::Once;
 
 const PAGE: &'static str = "tests/fixtures/index.html";
+const IP: &'static str = "0.0.0.0";
 static START: Once = Once::new();
 
 #[test]
@@ -27,8 +28,17 @@ fn test_include_exclude() {
 // Test to use include flag for downloading pages only matching the given pattern.
 fn include_filter() {
     let output_dir = "w2";
+    let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[fixtures::HTTP_ADDR, "-o", "w2", "-i", "mp[3-4]", "-j", "16"])
+        .args(&[
+            fixtures::HTTP_ADDR,
+            "-o",
+            output_dir,
+            "-i",
+            "mp[3-4]",
+            "-j",
+            "16",
+        ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
@@ -36,10 +46,11 @@ fn include_filter() {
 
     let status = cmd.wait().unwrap();
     assert!(status.success());
-    let paths = read_dir(output_dir).unwrap();
+    let paths = read_dir(&files_dir).unwrap();
+
     assert_eq!(
         paths.count(),
-        get_file_count_with_pattern("*_mp3", output_dir).unwrap()
+        get_file_count_with_pattern(".mp3", &files_dir).unwrap()
     );
 
     std::fs::remove_dir_all(output_dir).unwrap();
@@ -48,6 +59,7 @@ fn include_filter() {
 // Test demonstrating usage of multiple include patterns for downloading pages only matching the given pattern.
 fn include_multiple_filters() {
     let output_dir = "w1";
+    let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[
             fixtures::HTTP_ADDR,
@@ -64,9 +76,9 @@ fn include_multiple_filters() {
         .unwrap();
     let status = cmd.wait().unwrap();
     assert!(status.success());
-    let paths = read_dir(output_dir).unwrap();
-    let mp3_count = get_file_count_with_pattern("*_mp3", output_dir).unwrap();
-    let txt_count = get_file_count_with_pattern("*_txt", output_dir).unwrap();
+    let paths = read_dir(&files_dir).unwrap();
+    let mp3_count = get_file_count_with_pattern(".mp3", &files_dir).unwrap();
+    let txt_count = get_file_count_with_pattern(".txt", &files_dir).unwrap();
     assert_eq!(paths.count(), mp3_count + txt_count);
 
     std::fs::remove_dir_all(output_dir).unwrap();
@@ -75,6 +87,7 @@ fn include_multiple_filters() {
 // Test to use exclude flag for excluding pages matching the given pattern.
 fn exclude_filter() {
     let output_dir = "w3";
+    let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[
             fixtures::HTTP_ADDR,
@@ -92,9 +105,9 @@ fn exclude_filter() {
 
     let status = cmd.wait().unwrap();
     assert!(status.success());
-    let paths = read_dir(output_dir).unwrap();
-    let mp3_count = get_file_count_with_pattern("*_mp3", output_dir).unwrap();
-    let txt_count = get_file_count_with_pattern("*_txt", output_dir).unwrap();
+    let paths = read_dir(&files_dir).unwrap();
+    let mp3_count = get_file_count_with_pattern(".mp3", &files_dir).unwrap();
+    let txt_count = get_file_count_with_pattern(".txt", &files_dir).unwrap();
     let index_file = 1;
     assert_eq!(paths.count(), mp3_count + txt_count + index_file);
 

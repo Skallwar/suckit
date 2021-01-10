@@ -1,34 +1,16 @@
-use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use url::Url;
 
-///Max file name size supported by the file system
-const FILE_NAME_MAX_LENGTH: usize = 255;
-///Characters that need to be replaced by encode()
-const FRAGMENT: &AsciiSet = &CONTROLS.add(b'?');
-
-///Encode special character with '%' representation
-pub fn encode(path: &str) -> String {
-    utf8_percent_encode(path, FRAGMENT).to_string()
-}
-
-///Convert an Url to the corresponding path
+/// Convert an Url to the corresponding path
 pub fn to_path(url: &Url) -> String {
-    let fragment = url.fragment();
-    let mut url = url.clone();
-    url.set_fragment(None);
+    let domain = url.host_str().unwrap();
+    let path = url.path();
 
-    let url = url.as_str().split("://").collect::<Vec<&str>>()[1];
-
-    let mut url = url.replace('/', "_").replace('.', "_");
-    if url.len() >= FILE_NAME_MAX_LENGTH {
-        url = url.split_at(FILE_NAME_MAX_LENGTH).0.to_string(); //Shrink too long file name
+    let mut path = format!("{}{}", domain, path);
+    if path.ends_with("/") {
+        path = format!("{}index.html", path);
     }
-    let url = url.trim_end_matches('_'); //Remaining '/'
 
-    match fragment {
-        Some(fragment) => format!("{}#{}", url.to_string(), fragment),
-        None => url.to_string(),
-    }
+    path
 }
 
 #[cfg(test)]
@@ -37,22 +19,22 @@ mod tests {
 
     #[test]
     fn url_to_path() {
+        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/index.html").unwrap());
+
+        assert_eq!(str, "lwn.net/Kernel/index.html");
+    }
+
+    #[test]
+    fn url_to_path_index() {
         let str = super::to_path(&Url::parse("https://lwn.net/Kernel/").unwrap());
 
-        assert_eq!(str, "lwn_net_Kernel");
+        assert_eq!(str, "lwn.net/Kernel/index.html");
     }
 
     #[test]
     fn url_to_path_fragment() {
         let str = super::to_path(&Url::parse("https://lwn.net/Kernel/#fragment").unwrap());
 
-        assert_eq!(str, "lwn_net_Kernel#fragment");
-    }
-
-    #[test]
-    fn url_to_path_long() {
-        let str = super::to_path(&Url::parse("https://e8v0pez1lofdxoxgg5vwrnaqkjuvpowp9wtgc2eknlfpjdwmmfti8fcwyjzfdgys3nrgyqyeqjkulpyg9kfiqajza2bwxkinhhpohyrnnoy2bak374tcaxh1ycpboolmx8so9yq9kbcj5wu5cgymqndeqasdak0nvl0ijka6fkkmhhvt43l73bn38rewicd4h1ff2omhpni752jtqyzsjub5coh8dlnr3i35udmkzhxo4db3is9gnqmf3hl.comtest").unwrap());
-
-        assert_eq!(str, "e8v0pez1lofdxoxgg5vwrnaqkjuvpowp9wtgc2eknlfpjdwmmfti8fcwyjzfdgys3nrgyqyeqjkulpyg9kfiqajza2bwxkinhhpohyrnnoy2bak374tcaxh1ycpboolmx8so9yq9kbcj5wu5cgymqndeqasdak0nvl0ijka6fkkmhhvt43l73bn38rewicd4h1ff2omhpni752jtqyzsjub5coh8dlnr3i35udmkzhxo4db3is9gnqmf3hl_com");
+        assert_eq!(str, "lwn.net/Kernel/index.html");
     }
 }

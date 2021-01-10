@@ -9,6 +9,7 @@ use std::sync::Once;
 use lazy_static::lazy_static;
 
 const PAGE_NO_META: &'static str = "tests/fixtures/charset_test_html_no_meta.html";
+const IP: &'static str = "0.0.0.0";
 static START: Once = Once::new();
 
 lazy_static! {
@@ -24,6 +25,7 @@ fn test_http_charset_found() {
     });
 
     let output_dir = "charset_html_found";
+    let file_dir = format!("{}/{}", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[fixtures::HTTP_ADDR, "-o", output_dir])
         .stdout(Stdio::inherit())
@@ -32,7 +34,7 @@ fn test_http_charset_found() {
         .unwrap();
     let status = cmd.wait().unwrap();
     assert!(status.success());
-    let file_path = fs::read_dir(output_dir)
+    let file_path = fs::read_dir(file_dir)
         .unwrap()
         .next()
         .unwrap()
