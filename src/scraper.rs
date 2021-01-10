@@ -84,7 +84,7 @@ impl Scraper {
         }
     }
 
-    /// Fix the URLs contained in the DOM-tree so they point to each other relatif to each other
+    /// Fix the URLs contained in the DOM-tree so they point to each other relatively
     fn fix_domtree(&self, dom_url: &mut String, source_path: &str, dest_path: &str) {
         let source_path_parent = Path::new(source_path).parent().unwrap().to_str().unwrap(); //Unwrap should be safe, there will alway be at least .../index.html
         let diff_path = pathdiff::diff_paths(dest_path, source_path_parent).unwrap();
