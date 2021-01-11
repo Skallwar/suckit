@@ -1,6 +1,6 @@
 [package]
 name = "suckit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 authors = ["Esteban \"Skallwar\" Blanc <estblcsk@gmail.com>",
 	   "Arthur \"CohenArthur\" Cohen <arthur.cohen@epita.fr>"]
