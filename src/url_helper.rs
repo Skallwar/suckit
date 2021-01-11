@@ -1,13 +1,27 @@
+use std::path::Path;
+
 use url::Url;
 
 /// Convert an Url to the corresponding path
 pub fn to_path(url: &Url) -> String {
     let domain = url.host_str().unwrap();
     let path = url.path();
+    let query = url.query();
 
-    let mut path = format!("{}{}", domain, path);
-    if path.ends_with("/") {
-        path = format!("{}index.html", path);
+    let path_str = format!("{}{}", domain, path);
+    let path = Path::new(&path_str);
+
+    let mut path = if path.ends_with("/") {
+        format!("{}index.html", path_str)
+    } else {
+        match path.extension() {
+            None => format!("{}/index_no_slash.html", path_str),
+            _ => path_str,
+        }
+    };
+
+    if query.is_some() {
+        path = format!("{}?{}", path, query.unwrap());
     }
 
     path
