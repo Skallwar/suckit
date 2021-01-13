@@ -34,6 +34,7 @@ regex = "^1.4"
 encoding_rs = "^0.8"
 lazy_static = "1.4.0"
 pathdiff = "^0.2"
+md5 = "^0.7"
 
 [dev-dependencies]
 tiny_http = "^0.7"
