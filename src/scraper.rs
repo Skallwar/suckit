@@ -11,7 +11,6 @@ use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::Path;
-use std::process;
 use std::sync::Mutex;
 use std::time;
 
@@ -100,7 +99,7 @@ impl Scraper {
     fn find_charset(data: &[u8], http_charset: Option<String>) -> Option<String> {
         lazy_static! {
             static ref CHARSET_REGEX: Regex =
-                Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s;]+).*>").unwrap();
+                Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s;>]+).*>").unwrap();
         }
 
         // We don't know the real charset yet. We hope that the charset is ASCII
@@ -157,8 +156,17 @@ impl Scraper {
 
         let need_charset_conversion = Self::needs_charset_conversion(&charset_source_str);
 
-        let charset_source =
-            encoding_rs::Encoding::for_label(&charset_source_str.as_bytes()).unwrap();
+        let charset_source = match encoding_rs::Encoding::for_label(&charset_source_str.as_bytes())
+        {
+            Some(encoder) => encoder,
+            None => {
+                warn!(
+                    "Charset {} not supported for {}, defaulting to UTF-8",
+                    charset_source_str, url
+                );
+                encoding_rs::UTF_8
+            }
+        };
         let charset_utf8 = encoding_rs::UTF_8;
         let utf8_data = if need_charset_conversion {
             Self::charset_convert(data, charset_source, charset_utf8)
@@ -237,9 +245,10 @@ impl Scraper {
                 }
             }
             Err(e) => {
-                println!("Couldn't download a page, {:?}", e);
-                if !scraper.args.continue_on_error {
-                    process::exit(1);
+                if scraper.args.continue_on_error {
+                    error!("Couldn't download a page, {:?}", e);
+                } else {
+                    warn!("Couldn't download a page, {:?}", e);
                 }
             }
         }
