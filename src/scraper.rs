@@ -157,8 +157,17 @@ impl Scraper {
 
         let need_charset_conversion = Self::needs_charset_conversion(&charset_source_str);
 
-        let charset_source =
-            encoding_rs::Encoding::for_label(&charset_source_str.as_bytes()).unwrap();
+        let charset_source = match encoding_rs::Encoding::for_label(&charset_source_str.as_bytes())
+        {
+            Some(encoder) => encoder,
+            None => {
+                warn!(
+                    "Charset {} not supported for {}, defaulting to UTF-8",
+                    charset_source_str, url
+                );
+                encoding_rs::UTF_8
+            }
+        };
         let charset_utf8 = encoding_rs::UTF_8;
         let utf8_data = if need_charset_conversion {
             Self::charset_convert(data, charset_source, charset_utf8)
