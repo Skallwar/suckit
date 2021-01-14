@@ -692,6 +692,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
 
 [[package]]
+name = "md5"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
+
+[[package]]
 name = "memchr"
 version = "2.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1508,7 +1514,7 @@ dependencies = [
 
 [[package]]
 name = "suckit"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "colored",
@@ -1516,6 +1522,7 @@ dependencies = [
  "encoding_rs",
  "kuchiki",
  "lazy_static",
+ "md5",
  "pathdiff",
  "rand 0.8.1",
  "regex",
