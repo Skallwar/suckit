@@ -11,7 +11,6 @@ use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::Path;
-use std::process;
 use std::sync::Mutex;
 use std::time;
 
@@ -246,9 +245,10 @@ impl Scraper {
                 }
             }
             Err(e) => {
-                println!("Couldn't download a page, {:?}", e);
-                if !scraper.args.continue_on_error {
-                    process::exit(1);
+                if scraper.args.continue_on_error {
+                    error!("Couldn't download a page, {:?}", e);
+                } else {
+                    warn!("Couldn't download a page, {:?}", e);
                 }
             }
         }
