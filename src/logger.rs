@@ -39,7 +39,7 @@ impl Logger {
             "ERROR".red(),
             message
         );
-        panic!(message)
+        panic!("{}", message)
     }
 }
 
