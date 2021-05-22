@@ -22,7 +22,8 @@ pub fn to_path(url: &Url) -> String {
     });
     let mut parent = path
         .parent()
-        .map_or("", |filename| filename.to_str().unwrap()).to_string();
+        .map_or("", |filename| filename.to_str().unwrap())
+        .to_string();
 
     if url_path_and_query.ends_with("/") {
         filename = "index.html".to_string();
@@ -95,7 +96,12 @@ mod tests {
 
     #[test]
     fn url_to_path_querystrings() {
-        let str = super::to_path(&Url::parse("https://google.com/foobar/platform-redirect/?next=/configuration/releases/").unwrap());
+        let str = super::to_path(
+            &Url::parse(
+                "https://google.com/foobar/platform-redirect/?next=/configuration/releases/",
+            )
+            .unwrap(),
+        );
         assert_eq!(str, "google.com/foobar/platform-redirect/__querystring__next=/configuration/releases/index.html");
     }
 }
