@@ -9,28 +9,28 @@ const FILE_NAME_MAX_LENGTH: usize = 255;
 /// Convert an Url to the corresponding path
 pub fn to_path(url: &Url) -> String {
     let url_domain = url.host_str().unwrap();
-    let url_path = url.path();
-    let url_query = url.query();
 
-    let path = Path::new(url_path);
+    let mut url_path_and_query = url.path().to_string();
+    if let Some(query) = url.query() {
+        url_path_and_query.push_str("__querystring__");
+        url_path_and_query.push_str(query);
+    }
+
+    let path = Path::new(&url_path_and_query);
     let mut filename = path.file_name().map_or(String::from(""), |filename| {
         filename.to_str().unwrap().to_string()
     });
     let mut parent = path
         .parent()
-        .map_or("", |filename| filename.to_str().unwrap());
+        .map_or("", |filename| filename.to_str().unwrap())
+        .to_string();
 
-    if url_path.ends_with("/") {
+    if url_path_and_query.ends_with("/") {
         filename = "index.html".to_string();
-        parent = url_path.trim_end_matches("/");
-    } else if path.extension().is_none() {
-        parent = url_path;
+        parent = url_path_and_query.trim_end_matches("/").to_string();
+    } else if Path::new(&filename).extension().is_none() {
+        parent = url_path_and_query.trim_end_matches("/").to_string();
         filename = "index_no_slash.html".to_string();
-    }
-
-    if url_query.is_some() {
-        filename.push('?');
-        filename.push_str(url_query.unwrap());
     }
 
     if filename.len() > FILE_NAME_MAX_LENGTH {
@@ -92,5 +92,16 @@ mod tests {
         let str = super::to_path(&Url::parse("https://lwn.net/Kernel/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.html").unwrap());
 
         assert_eq!(str, "lwn.net/Kernel/5ca82767de71fe8930587e82bb994903.html");
+    }
+
+    #[test]
+    fn url_to_path_querystrings() {
+        let str = super::to_path(
+            &Url::parse(
+                "https://google.com/foobar/platform-redirect/?next=/configuration/releases/",
+            )
+            .unwrap(),
+        );
+        assert_eq!(str, "google.com/foobar/platform-redirect/__querystring__next=/configuration/releases/index.html");
     }
 }
