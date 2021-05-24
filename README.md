@@ -38,7 +38,7 @@ A common use case could be the following:
 
 `suckit http://books.toscrape.com -j 8 -o /path/to/downloaded/pages/`
 
-<a href="https://asciinema.org/a/327889"><img alt="asciicast" src="https://asciinema.org/a/327889.png" width="500" /></a>
+<a href="https://asciinema.org/a/327889"><img alt="asciicast" src="https://asciinema.org/a/327889.png" width="500" align="middle" /></a>
 
 # Installation
 
