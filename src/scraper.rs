@@ -184,15 +184,14 @@ impl Scraper {
             .into_iter()
             .filter(|candidate| Scraper::should_visit(candidate, &url))
             .for_each(|next_url| {
-                let next_full_url = url.join(&next_url).unwrap();
+                let mut next_full_url = url.join(&next_url).unwrap();
+                next_full_url.set_fragment(None);
                 let path = url_helper::to_path(&next_full_url);
 
                 if scraper.map_url_path(&next_full_url, path.clone())
                     && (scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth)
                 {
-                    let mut next_full_download_url = next_full_url.clone();
-                    next_full_download_url.set_fragment(None);
-                    Scraper::push(transmitter, next_full_download_url, depth + 1);
+                    Scraper::push(transmitter, next_full_url, depth + 1);
                 }
 
                 scraper.fix_domtree(next_url, &source_path, &path);
