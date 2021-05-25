@@ -244,7 +244,7 @@ impl Scraper {
                 }
             }
             Err(e) => {
-                if scraper.args.continue_on_error {
+                if !scraper.args.continue_on_error {
                     error!("Couldn't download a page, {:?}", e);
                 } else {
                     warn!("Couldn't download a page, {:?}", e);
