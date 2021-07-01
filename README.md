@@ -1,6 +1,6 @@
 ![Build and test](https://github.com/Skallwar/suckit/workflows/Build%20and%20test/badge.svg)
 [![Crates.io](https://img.shields.io/crates/v/suckit.svg)](https://crates.io/crates/suckit)
-[![Docs](https://docs.rs/suckit/badge.svg)](https://docs.rs/gis_puller)
+[![Docs](https://docs.rs/suckit/badge.svg)](https://docs.rs/suckit)
 [![Deps](https://deps.rs/repo/github/Skallwar/suckit/status.svg)](https://deps.rs/repo/github/Skallwar/suckit)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
