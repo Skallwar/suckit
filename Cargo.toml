@@ -37,5 +37,5 @@ pathdiff = "^0.2"
 md5 = "^0.7"
 
 [dev-dependencies]
-tiny_http = "^0.7"
+tiny_http = "^0.8"
 subprocess = "^0.2"
