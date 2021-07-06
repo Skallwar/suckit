@@ -1,6 +1,7 @@
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
+use symlink::symlink_auto;
 
 use crate::{error, warn};
 
@@ -37,7 +38,7 @@ pub fn symlink(source: &str, destination: &str, path: &Option<PathBuf>) {
         None => PathBuf::from(destination),
     };
 
-    if let Err(_) = std::os::unix::fs::symlink(source, &destination) {
+    if let Err(_) = symlink_auto(source, &destination) {
         warn!(
             "{} is already present, coulnd't create a symlink to {}",
             destination.display(),
