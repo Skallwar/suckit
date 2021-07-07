@@ -10,7 +10,7 @@
 `SuckIT` allows you to recursively visit and download a website's content to
 your disk.
 
-![SuckIT Logo](suckit_logo.png)
+![SuckIT Logo](media/suckit_logo.png)
 
 # Features
 
@@ -43,7 +43,7 @@ A common use case could be the following:
 
 `suckit http://books.toscrape.com -j 8 -o /path/to/downloaded/pages/`
 
-[![asciicast](https://asciinema.org/a/327889.svg)](https://asciinema.org/a/327889)
+![asciicast](media/suckit-100cols-15rows.svg)
 
 # Installation
 
