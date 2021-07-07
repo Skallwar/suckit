@@ -4,6 +4,7 @@
 [![Deps](https://deps.rs/repo/github/Skallwar/suckit/status.svg)](https://deps.rs/repo/github/Skallwar/suckit)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![MSRV](https://img.shields.io/badge/MSRV-1.46.0-blue)
 
 # SuckIT
 

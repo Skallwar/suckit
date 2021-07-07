@@ -21,10 +21,14 @@ jobs:
           fmt' (version $(cargo fmt --version))"; false)
 
   tests:
-    runs-on: ubuntu-latest
+    name: Tests ${{ matrix.target }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        target: [x86_64-unknown-linux-gnu]
+        target:
+          - x86_64-unknown-linux-gnu
+        os:
+          - ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
@@ -43,10 +47,17 @@ jobs:
   build:
     needs: [lint, tests]
 
-    runs-on: ubuntu-latest
+    name: Build ${{ matrix.target }}-${{ matrix.rust }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        target: [x86_64-unknown-linux-gnu]
+        target:
+          - x86_64-unknown-linux-gnu
+        rust:
+          - stable
+          - 1.46.0
+        os:
+          - ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
@@ -54,7 +65,7 @@ jobs:
     - name: Rustup setup
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: stable
+        toolchain: ${{ matrix.rust }}
         default: true
         target: ${{ matrix.target }}
 
