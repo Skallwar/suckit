@@ -35,7 +35,7 @@ jobs:
           sha512sum ./target/${{ matrix.target }}/release/suckit | cut -d " " -f 1 > suckit.sha512
 
       - name: Upload release asset
-        id: upload-release-asset
+        id: upload-release-asset-${{ matrix.target }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
           asset_content_type: application/x-elf
 
       - name: Upload release asset checksum
-        id: upload-release-asset
+        id: upload-release-asset-sha512-${{ matrix.target }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
