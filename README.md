@@ -4,13 +4,14 @@
 [![Deps](https://deps.rs/repo/github/Skallwar/suckit/status.svg)](https://deps.rs/repo/github/Skallwar/suckit)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![MSRV](https://img.shields.io/badge/MSRV-1.46.0-blue)
 
 # SuckIT
 
 `SuckIT` allows you to recursively visit and download a website's content to
 your disk.
 
-![SuckIT Logo](suckit_logo.png)
+![SuckIT Logo](media/suckit_logo.png)
 
 # Features
 
@@ -43,7 +44,7 @@ A common use case could be the following:
 
 `suckit http://books.toscrape.com -j 8 -o /path/to/downloaded/pages/`
 
-[![asciicast](https://asciinema.org/a/327889.svg)](https://asciinema.org/a/327889)
+![asciicast](media/suckit-adjusted-120cols-40rows-100ms.svg)
 
 # Installation
 
