@@ -43,7 +43,7 @@ A common use case could be the following:
 
 `suckit http://books.toscrape.com -j 8 -o /path/to/downloaded/pages/`
 
-![asciicast](media/suckit-100cols-15rows.svg)
+![asciicast](media/suckit-adjusted-120cols-40rows-100ms.svg)
 
 # Installation
 
