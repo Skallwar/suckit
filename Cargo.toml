@@ -22,6 +22,15 @@ include = [
 [package.metadata]
 msrv = "1.44.1"
 
+[lib]
+name = "suckit"
+path = "src/lib.rs"
+
+[[bin]]
+name = "suckit"
+path = "src/bin/suckit.rs"
+doc = false
+
 [dependencies]
 structopt = "^0.3"
 crossbeam = "^0.8"
