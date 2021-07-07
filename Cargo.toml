@@ -19,7 +19,8 @@ include = [
 	"src/*",
 ]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata]
+msrv = "1.44.1"
 
 [dependencies]
 structopt = "^0.3"
