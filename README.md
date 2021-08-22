@@ -29,7 +29,8 @@ your disk.
 |---|---|
 |`-h, --help`|Displays help information|
 |`-v, --verbose`|Activate Verbose output|
-|`-d, --depth`|Specify the level of depth to go to when visiting the website|
+|`-d, --depth`|Specify the level of depth to go to when visiting the website. Default is -1 (infinity)|
+|`--ext-depth`|Specify the level of depth to go to when visiting websites that have a different domain name. Default is 0 (ignore external links), -1 is infinity|
 |`-j, --jobs`|Number of threads to use|
 |`-o, --output`|Output directory where the downloaded files are written|
 |`-t, --tries`|Number of times to retry when the downloading of a page fails|

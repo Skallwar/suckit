@@ -1,3 +1,10 @@
+use std::borrow::Borrow;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::path::Path;
+use std::sync::Mutex;
+use std::time;
+
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use crossbeam::thread;
 use encoding_rs::Encoding;
@@ -7,12 +14,7 @@ use rand::Rng;
 use regex::Regex;
 use url::Url;
 
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::path::Path;
-use std::sync::Mutex;
-use std::time;
+use crate::{error, info, warn};
 
 use super::args;
 use super::disk;
@@ -20,8 +22,6 @@ use super::dom;
 use super::downloader;
 use super::response;
 use super::url_helper;
-
-use crate::{error, info, warn};
 
 /// Maximum number of empty recv() from the channel
 static MAX_EMPTY_RECEIVES: usize = 10;
@@ -37,8 +37,8 @@ static SLEEP_DURATION: time::Duration = time::Duration::from_millis(SLEEP_MILLIS
 /// adds more as new URLs are found
 pub struct Scraper {
     args: args::Args,
-    transmitter: Sender<(Url, i32)>,
-    receiver: Receiver<(Url, i32)>,
+    transmitter: Sender<(Url, i32, i32)>,
+    receiver: Receiver<(Url, i32, i32)>,
     downloader: downloader::Downloader,
     visited_urls: Mutex<HashSet<String>>,
     path_map: Mutex<HashMap<String, String>>,
@@ -77,8 +77,8 @@ impl Scraper {
     }
 
     /// Push a new URL into the channel
-    fn push(transmitter: &Sender<(Url, i32)>, url: Url, depth: i32) {
-        if let Err(e) = transmitter.send((url, depth)) {
+    fn push(transmitter: &Sender<(Url, i32, i32)>, url: Url, depth: i32, ext_depth: i32) {
+        if let Err(e) = transmitter.send((url, depth, ext_depth)) {
             error!("Couldn't push to channel ! {}", e);
         }
     }
@@ -140,9 +140,10 @@ impl Scraper {
     /// Proces an html file: add new url to the chanel and prepare for offline navigation
     fn handle_html(
         scraper: &Scraper,
-        transmitter: &Sender<(Url, i32)>,
+        transmitter: &Sender<(Url, i32, i32)>,
         url: &Url,
         depth: i32,
+        ext_depth: i32,
         data: &[u8],
         http_charset: Option<String>,
     ) -> Vec<u8> {
@@ -182,16 +183,32 @@ impl Scraper {
 
         dom.find_urls_as_strings()
             .into_iter()
-            .filter(|candidate| Scraper::should_visit(candidate, &url))
+            .filter(|candidate| Scraper::should_visit(candidate))
             .for_each(|next_url| {
-                let mut next_full_url = url.join(&next_url).unwrap();
+                let url_to_parse = Scraper::normalize_url(next_url.clone());
+
+                let mut next_full_url = match url.join(url_to_parse.as_str()) {
+                    Ok(url) => url,
+                    Err(e) => panic!("Failed to parse url: {} | Error: {}", next_url, e),
+                };
+
                 next_full_url.set_fragment(None);
                 let path = url_helper::to_path(&next_full_url);
 
-                if scraper.map_url_path(&next_full_url, path.clone())
-                    && (scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth)
-                {
-                    Scraper::push(transmitter, next_full_url, depth + 1);
+                if scraper.map_url_path(&next_full_url, path.clone()) {
+                    if !Scraper::is_on_another_domain(&next_url, &url) {
+                        // If we are determining for a local domain
+                        if scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth {
+                            Scraper::push(transmitter, next_full_url, depth + 1, ext_depth);
+                        }
+                    } else {
+                        // If we are determining for an external domain
+                        if scraper.args.ext_depth == INFINITE_DEPTH
+                            || ext_depth < scraper.args.ext_depth
+                        {
+                            Scraper::push(transmitter, next_full_url, depth, ext_depth + 1);
+                        }
+                    }
                 }
 
                 scraper.fix_domtree(next_url, &source_path, &path);
@@ -207,7 +224,13 @@ impl Scraper {
     }
 
     /// Process a single URL
-    fn handle_url(scraper: &Scraper, transmitter: &Sender<(Url, i32)>, url: Url, depth: i32) {
+    fn handle_url(
+        scraper: &Scraper,
+        transmitter: &Sender<(Url, i32, i32)>,
+        url: Url,
+        depth: i32,
+        ext_depth: i32,
+    ) {
         match scraper.downloader.get(&url) {
             Ok(response) => {
                 let data = match response.data {
@@ -216,6 +239,7 @@ impl Scraper {
                         transmitter,
                         &url,
                         depth,
+                        ext_depth,
                         &data,
                         response.charset,
                     ),
@@ -263,7 +287,7 @@ impl Scraper {
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
         self.map_url_path(&self.args.origin, url_helper::to_path(&self.args.origin));
-        Scraper::push(&self.transmitter, self.args.origin.clone(), 0);
+        Scraper::push(&self.transmitter, self.args.origin.clone(), 0, 0);
 
         thread::scope(|thread_scope| {
             for _ in 0..self.args.jobs {
@@ -285,9 +309,9 @@ impl Scraper {
                                 }
                                 TryRecvError::Disconnected => panic!("{}", e),
                             },
-                            Ok((url, depth)) => {
+                            Ok((url, depth, ext_depth)) => {
                                 counter = 0;
-                                Scraper::handle_url(&self_clone, &tx, url, depth);
+                                Scraper::handle_url(&self_clone, &tx, url, depth, ext_depth);
                                 self_clone.sleep(&mut rng);
                             }
                         }
@@ -313,14 +337,14 @@ impl Scraper {
         std::thread::sleep(delay_duration);
     }
 
-    /// If a URL should be visited, or does it belong to another domain
-    fn should_visit(url: &str, base: &Url) -> bool {
+    /// If a URL should be visited (ignores `mail:`, `javascript:` and other pseudo-links)
+    fn should_visit(url: &str) -> bool {
         match Url::parse(url) {
             /* The given candidate is a valid URL, and not a relative path to
-             * the next one. Therefore, we have to check if this URL belongs
-             * to the same domain as our current URL. If the candidate has the
-             * same domain as our base, then we should visit it */
-            Ok(not_ok) => not_ok.domain() == base.domain(),
+             * the next one. Therefore, we have to check if this URL is valid.
+             * If it is, we should visit it.
+             */
+            Ok(not_ok) => not_ok.has_host() && !not_ok.cannot_be_a_base(),
 
             /* Since we couldn't parse this "URL", then it must be a relative
              * path or a malformed URL. If the URL is malformed, then it will
@@ -328,13 +352,46 @@ impl Scraper {
             Err(_) => true,
         }
     }
+
+    /// Replaces `///` with `//`
+    /// And `//` with `https://`
+    /// Without this function, if url is `///<domain>.<extension>/`, the app crashes.
+    fn normalize_url(url: String) -> String {
+        if url.starts_with("///") {
+            return url.replacen("///", "https://", 1);
+        } else if url.starts_with("//") {
+            return url.replacen("//", "https://", 1);
+        }
+        url
+    }
+
+    /// If the URL leads to another domain
+    fn is_on_another_domain(url: &str, base: &Url) -> bool {
+        let real_url = Scraper::normalize_url(String::from(url));
+
+        match Url::parse(real_url.as_str()) {
+            /* The given candidate is a valid URL, and not a relative path to
+             * the next one. Therefore, we have to check if this URL belongs
+             * to the same domain as our current URL. If the candidate has the
+             * same domain as our base, and the depth condition is satisfied,
+             * then we should visit it,  */
+            Ok(not_ok) => not_ok.domain() != base.domain(),
+
+            /* Since we couldn't parse this "URL", then it must be a relative
+             * path or a malformed URL. If the URL is malformed, then it will
+             * be handled during the join() call in run() */
+            Err(_) => false,
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use regex::Regex;
     use std::path::PathBuf;
+
+    use regex::Regex;
+
+    use super::*;
 
     #[test]
     fn test_zero_delay_range() {
@@ -344,6 +401,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 5,
+            ext_depth: 0,
             delay: 0,
             user_agent: "suckit".to_string(),
             random_range: 0,
@@ -366,6 +424,7 @@ mod tests {
             jobs: 1,
             tries: 1,
             depth: 5,
+            ext_depth: 0,
             delay: 2,
             user_agent: "suckit".to_string(),
             random_range: 5,
