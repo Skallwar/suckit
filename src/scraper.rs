@@ -99,7 +99,7 @@ impl Scraper {
     fn find_charset(data: &[u8], http_charset: Option<String>) -> Option<String> {
         lazy_static! {
             static ref CHARSET_REGEX: Regex =
-                Regex::new("<meta.*charset\\s*=\\s*\"?([^\"\\s;>]+).*>").unwrap();
+                Regex::new(r#"<meta.*charset\s*=\s*["']?([^"'\s;>]+).*>"#).unwrap();
         }
 
         // We don't know the real charset yet. We hope that the charset is ASCII
