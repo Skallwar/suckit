@@ -1,4 +1,5 @@
 ![Build and test](https://github.com/Skallwar/suckit/workflows/Build%20and%20test/badge.svg)
+[![codecov](https://codecov.io/gh/Skallwar/suckit/branch/master/graph/badge.svg?token=ZLD369AY2G)](https://codecov.io/gh/Skallwar/suckit)
 [![Crates.io](https://img.shields.io/crates/v/suckit.svg)](https://crates.io/crates/suckit)
 [![Docs](https://docs.rs/suckit/badge.svg)](https://docs.rs/suckit)
 [![Deps](https://deps.rs/repo/github/Skallwar/suckit/status.svg)](https://deps.rs/repo/github/Skallwar/suckit)
