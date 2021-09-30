@@ -33,9 +33,16 @@ pub struct Args {
         short,
         long,
         default_value = "-1",
-        help = "Maximum recursion depth to reach when visiting. -1 is the default and will go as far as it can"
+        help = "Maximum recursion depth to reach when visiting. Default is -1 (infinity)"
     )]
     pub depth: i32,
+
+    #[structopt(
+        long,
+        default_value = "0",
+        help = "Maximum recursion depth to reach when visiting external domains. Default is 0. -1 means infinity"
+    )]
+    pub ext_depth: i32,
 
     ///Number of retries when downloading a page fails
     #[structopt(
@@ -81,21 +88,21 @@ pub struct Args {
 
     /// Regex filter to limit saving pages to only matched ones
     #[structopt(
-        short,
-        long,
-        default_value = ".*",
-        parse(try_from_str = parse_regex),
-        help = "Regex filter to limit to only saving pages that match this expression"
+    short,
+    long,
+    default_value = ".*",
+    parse(try_from_str = parse_regex),
+    help = "Regex filter to limit to only saving pages that match this expression"
     )]
     pub include: Regex,
 
     /// Regex filter to limit saving pages to only matched ones
     #[structopt(
-        short,
-        long,
-        default_value = "$^",
-        parse(try_from_str = parse_regex),
-        help = "Regex filter to exclude saving pages that match this expression"
+    short,
+    long,
+    default_value = "$^",
+    parse(try_from_str = parse_regex),
+    help = "Regex filter to exclude saving pages that match this expression"
     )]
     pub exclude: Regex,
 

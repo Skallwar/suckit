@@ -1,4 +1,3 @@
-use super::response::{Response, ResponseData};
 use std::collections::HashMap;
 
 use lazy_static::lazy_static;
@@ -6,6 +5,8 @@ use regex::Regex;
 use url::Url;
 
 use crate::warn;
+
+use super::response::{Response, ResponseData};
 
 const AUTH_CHUNK_SIZE: usize = 3;
 
@@ -190,14 +191,14 @@ mod tests {
         assert_eq!(
             parse_auth(
                 &["".to_string(), "pw".to_string()],
-                &Url::parse("https://example.com/").unwrap()
+                &Url::parse("https://example.com/").unwrap(),
             ),
             Err("Invalid arguments supplied to auth".to_string())
         );
         assert_eq!(
             parse_auth(
                 &["username".to_string()],
-                &Url::parse("https://example.com/").unwrap()
+                &Url::parse("https://example.com/").unwrap(),
             ),
             Ok(("username".to_string(), None, "example.com".to_string()))
         );
@@ -209,7 +210,7 @@ mod tests {
                     "h".to_string(),
                     "t".to_string()
                 ],
-                &Url::parse("https://example.com/").unwrap()
+                &Url::parse("https://example.com/").unwrap(),
             ),
             Ok(("un".to_string(), Some("pw".to_string()), "h".to_string()))
         )
