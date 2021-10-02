@@ -438,4 +438,24 @@ mod tests {
 
         let _ = Scraper::new(args);
     }
+
+    #[test]
+    fn test_charset_parsing() {
+        assert_eq!(
+            Scraper::find_charset(b"<meta charset=\"UTF-8\">", None),
+            Some("utf-8".to_string())
+        );
+        assert_eq!(
+            Scraper::find_charset(b"<meta charset=\'UTF-8\'>", None),
+            Some("utf-8".to_string())
+        );
+        assert_eq!(
+            Scraper::find_charset(b"<meta charset=\"windows-1252\">", None),
+            Some("windows-1252".to_string())
+        );
+        assert_eq!(
+            Scraper::find_charset(b"<meta charset=\'windows-1252\'>", None),
+            Some("windows-1252".to_string())
+        );
+    }
 }

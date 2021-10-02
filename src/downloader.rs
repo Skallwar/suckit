@@ -110,9 +110,9 @@ impl Downloader {
             Ok(mut data) => {
                 lazy_static! {
                     static ref DATA_TYPE_REGEX: Regex =
-                        Regex::new("^.*(\\b[a-z]+/[a-z-+\\.]+).*$").unwrap();
+                        Regex::new(r#"^.*(\b[a-z]+/[a-z-+\.]+).*$"#).unwrap();
                     static ref CHARSET_REGEX: Regex =
-                        Regex::new("^.*charset\\s*=\\s*\"?([^\"\\s;]+).*$").unwrap();
+                        Regex::new(r#"^.*charset\s*=\s*["']?([^"'\s;]+).*$"#).unwrap();
                 }
 
                 let (data_type, charset): (String, Option<String>) =
