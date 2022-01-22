@@ -90,7 +90,7 @@ impl Scraper {
         let relative_path = diff_path.as_path().to_str().unwrap();
 
         dom_url.clear();
-        dom_url.push_str(&relative_path);
+        dom_url.push_str(relative_path);
     }
 
     /// Find the charset of the webpage. ``data`` is not a String as this might not be utf8.
@@ -110,7 +110,7 @@ impl Scraper {
         // We use the first one, hopping we are in the <head> of the page... or if nothing is found
         // we used the http charset (if any).
         captures
-            .map(|first| String::from(first.get(1).unwrap().as_str().to_lowercase()))
+            .map(|first| first.get(1).unwrap().as_str().to_lowercase())
             .or(http_charset)
     }
 
@@ -124,17 +124,13 @@ impl Scraper {
         let decode_bytes = decode_result.0.borrow();
 
         let encode_result = charset_dest.encode(decode_bytes);
-        let encode_bytes = encode_result.0.into_owned();
 
-        encode_bytes
+        encode_result.0.into_owned()
     }
 
     /// Check if the charset require conversion
     fn needs_charset_conversion(charset: &str) -> bool {
-        match charset {
-            "utf-8" => false,
-            _ => true,
-        }
+        !matches!(charset, "utf-8")
     }
 
     /// Proces an html file: add new url to the chanel and prepare for offline navigation
@@ -157,8 +153,7 @@ impl Scraper {
 
         let need_charset_conversion = Self::needs_charset_conversion(&charset_source_str);
 
-        let charset_source = match encoding_rs::Encoding::for_label(&charset_source_str.as_bytes())
-        {
+        let charset_source = match encoding_rs::Encoding::for_label(charset_source_str.as_bytes()) {
             Some(encoder) => encoder,
             None => {
                 warn!(
@@ -196,7 +191,7 @@ impl Scraper {
                 let path = url_helper::to_path(&next_full_url);
 
                 if scraper.map_url_path(&next_full_url, path.clone()) {
-                    if !Scraper::is_on_another_domain(&next_url, &url) {
+                    if !Scraper::is_on_another_domain(next_url, url) {
                         // If we are determining for a local domain
                         if scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth {
                             Scraper::push(transmitter, next_full_url, depth + 1, ext_depth);
@@ -311,7 +306,7 @@ impl Scraper {
                             },
                             Ok((url, depth, ext_depth)) => {
                                 counter = 0;
-                                Scraper::handle_url(&self_clone, &tx, url, depth, ext_depth);
+                                Scraper::handle_url(self_clone, &tx, url, depth, ext_depth);
                                 self_clone.sleep(&mut rng);
                             }
                         }

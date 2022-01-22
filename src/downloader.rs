@@ -120,16 +120,14 @@ impl Downloader {
                         Some(content_type_header) => {
                             let content_type = content_type_header.to_str().unwrap();
                             let data_type_captures =
-                                DATA_TYPE_REGEX.captures_iter(&content_type).nth(0);
+                                DATA_TYPE_REGEX.captures_iter(content_type).next();
                             let data_type = data_type_captures
                                 .map_or(String::from("text/html"), |first| {
-                                    String::from(first.get(1).unwrap().as_str().to_lowercase())
+                                    first.get(1).unwrap().as_str().to_lowercase()
                                 });
-                            let charset_captures =
-                                CHARSET_REGEX.captures_iter(&content_type).nth(0);
-                            let charset = charset_captures.map(|first| {
-                                String::from(first.get(1).unwrap().as_str().to_lowercase())
-                            });
+                            let charset_captures = CHARSET_REGEX.captures_iter(content_type).next();
+                            let charset = charset_captures
+                                .map(|first| first.get(1).unwrap().as_str().to_lowercase());
                             (data_type, charset)
                         }
                         None => (String::from("text/html"), None),
