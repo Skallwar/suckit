@@ -223,6 +223,76 @@ impl Scraper {
         }
     }
 
+    /// Some CSS inline data (ie. SVG) inside. Check if the fragment is such an inlined data
+    fn is_inline_css_data(data: &str) -> bool {
+        data.starts_with("data:")
+    }
+
+    /// Proces an html file: add new url to the chanel and prepare for offline navigation
+    fn handle_css(
+        scraper: &Scraper,
+        transmitter: &Sender<(Url, i32, i32)>,
+        url: &Url,
+        depth: i32,
+        ext_depth: i32,
+        data: &[u8],
+        _http_charset: Option<String>,
+    ) -> Vec<u8> {
+        lazy_static! {
+            static ref CSS_URL_REGEX: Regex = Regex::new(r#"url\(["']?([^)]*)["']?\);?"#).unwrap();
+        }
+
+        let data_str = match std::str::from_utf8(data) {
+            Ok(s) => s,
+            Err(_) => return data.to_vec(),
+        };
+
+        let mut data_res = String::from(data_str);
+
+        let source_path = match scraper.path_map.lock().unwrap().get(url.as_str()) {
+            Some(path) => path.clone(),
+            None => error!("Url {} was not found in the path map", url.as_str()),
+        };
+
+        for test in CSS_URL_REGEX.captures_iter(data_str) {
+            let source_url = test.get(1).unwrap().as_str().to_string();
+            if Scraper::is_inline_css_data(&source_url) {
+                continue;
+            }
+
+            let normalized_url = Scraper::normalize_url(source_url.clone());
+            let next_full_url = match url.join(normalized_url.as_str()) {
+                Ok(url) => url,
+                Err(e) => panic!("Failed to parse url: {} | Error: {}", normalized_url, e),
+            };
+
+            let dest_path = url_helper::to_path(&next_full_url);
+            let source_path_parent = Path::new(&source_path).parent().unwrap().to_str().unwrap(); //Unwrap should be safe, there will alway be at least .../index.html
+            let diff_path = pathdiff::diff_paths(&dest_path, source_path_parent).unwrap();
+            let relative_path = diff_path.as_path().to_str().unwrap();
+
+            data_res = data_res.replace(&source_url, relative_path);
+
+            if scraper.map_url_path(&next_full_url, dest_path.clone()) {
+                if !Scraper::is_on_another_domain(&next_full_url.as_str(), &url) {
+                    // If we are determining for a local domain
+                    if scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth {
+                        Scraper::push(transmitter, next_full_url, depth + 1, ext_depth);
+                    }
+                } else {
+                    // If we are determining for an external domain
+                    if scraper.args.ext_depth == INFINITE_DEPTH
+                        || ext_depth < scraper.args.ext_depth
+                    {
+                        Scraper::push(transmitter, next_full_url, depth, ext_depth + 1);
+                    }
+                }
+            }
+        }
+
+        data.to_vec()
+    }
+
     /// Process a single URL
     fn handle_url(
         scraper: &Scraper,
@@ -235,6 +305,15 @@ impl Scraper {
             Ok(response) => {
                 let data = match response.data {
                     response::ResponseData::Html(data) => Scraper::handle_html(
+                        scraper,
+                        transmitter,
+                        &url,
+                        depth,
+                        ext_depth,
+                        &data,
+                        response.charset,
+                    ),
+                    response::ResponseData::CSS(data) => Scraper::handle_css(
                         scraper,
                         transmitter,
                         &url,

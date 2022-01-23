@@ -78,6 +78,11 @@ impl Downloader {
         content_type.contains("text/html")
     }
 
+    ///Check if the type in the 'content-type' head field is css
+    fn is_css(content_type: &str) -> bool {
+        content_type.contains("text/css")
+    }
+
     ///Return the filename based on the HTML header of the response
     fn get_filename(header_map: &reqwest::header::HeaderMap) -> Option<String> {
         if let Some(content_disposition) = header_map.get("content-disposition") {
@@ -145,6 +150,8 @@ impl Downloader {
                 data.copy_to(&mut raw_data).unwrap();
                 let response_data = if Downloader::is_html(&data_type) {
                     ResponseData::Html(raw_data)
+                } else if Downloader::is_css(&data_type) {
+                    ResponseData::CSS(raw_data)
                 } else {
                     ResponseData::Other(raw_data)
                 };
