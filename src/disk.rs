@@ -39,7 +39,7 @@ pub fn symlink(source: &str, destination: &str, path: &Option<PathBuf>) {
         None => PathBuf::from(destination),
     };
 
-    if let Err(_) = symlink_auto(source, &destination) {
+    if symlink_auto(source, &destination).is_err() {
         warn!(
             "{} is already present, coulnd't create a symlink to {}",
             destination.display(),
