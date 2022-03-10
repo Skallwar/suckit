@@ -178,7 +178,7 @@ impl Scraper {
 
         dom.find_urls_as_strings()
             .into_iter()
-            .filter(|candidate| Scraper::should_visit(candidate))
+            .filter(|candidate| Scraper::should_visit(scraper, candidate))
             .for_each(|next_url| {
                 let url_to_parse = Scraper::normalize_url(next_url.clone());
 
@@ -246,10 +246,14 @@ impl Scraper {
                     let path_map = scraper.path_map.lock().unwrap();
                     let path = path_map.get(url.as_str()).unwrap();
 
-                    if !scraper.args.dry_run
-                        && !scraper.args.exclude.is_match(url.as_str())
-                        && scraper.args.include.is_match(url.as_str())
-                    {
+                    // for the origin URL, we need to check the in/exclude rules since
+                    // it is pushed into the channel unconditionally.
+                    // we want to process its links, but maybe not download it.
+                    // all other links are filtered before they are added to the channel.
+                    let filter_rules_match = (depth > 0
+                        || (!scraper.args.exclude.is_match(url.as_str())
+                            && scraper.args.include.is_match(url.as_str())));
+                    if !scraper.args.dry_run && filter_rules_match {
                         match response.filename {
                             Some(filename) => {
                                 disk::save_file(&filename, &data, &scraper.args.output);
@@ -333,7 +337,10 @@ impl Scraper {
     }
 
     /// If a URL should be visited (ignores `mail:`, `javascript:` and other pseudo-links)
-    fn should_visit(url: &str) -> bool {
+    fn should_visit(scraper: &Scraper, url: &str) -> bool {
+        if scraper.args.exclude.is_match(url) || !scraper.args.include.is_match(url) {
+            return false;
+        }
         match Url::parse(url) {
             /* The given candidate is a valid URL, and not a relative path to
              * the next one. Therefore, we have to check if this URL is valid.
