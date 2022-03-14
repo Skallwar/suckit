@@ -250,9 +250,9 @@ impl Scraper {
                     // it is pushed into the channel unconditionally.
                     // we want to process its links, but maybe not download it.
                     // all other links are filtered before they are added to the channel.
-                    let filter_rules_match = (depth > 0
+                    let filter_rules_match = depth > 0
                         || (!scraper.args.exclude.is_match(url.as_str())
-                            && scraper.args.include.is_match(url.as_str())));
+                            && scraper.args.include.is_match(url.as_str()));
                     if !scraper.args.dry_run && filter_rules_match {
                         match response.filename {
                             Some(filename) => {
