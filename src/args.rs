@@ -86,6 +86,24 @@ pub struct Args {
     )]
     pub user_agent: String,
 
+    /// Regex filter to limit visiting pages to only matched ones
+    #[structopt(
+    long,
+    default_value = ".*",
+    parse(try_from_str = parse_regex),
+    help = "Regex filter to limit to only visiting pages that match this expression"
+    )]
+    pub include_visit: Regex,
+
+    /// Regex filter to limit visiting pages to only matched ones
+    #[structopt(
+    long,
+    default_value = "$^",
+    parse(try_from_str = parse_regex),
+    help = "Regex filter to exclude visiting pages that match this expression"
+    )]
+    pub exclude_visit: Regex,
+
     /// Regex filter to limit saving pages to only matched ones
     #[structopt(
     short,
@@ -94,7 +112,7 @@ pub struct Args {
     parse(try_from_str = parse_regex),
     help = "Regex filter to limit to only saving pages that match this expression"
     )]
-    pub include: Regex,
+    pub include_download: Regex,
 
     /// Regex filter to limit saving pages to only matched ones
     #[structopt(
@@ -104,7 +122,14 @@ pub struct Args {
     parse(try_from_str = parse_regex),
     help = "Regex filter to exclude saving pages that match this expression"
     )]
-    pub exclude: Regex,
+    pub exclude_download: Regex,
+
+    /// If set, set the visit filter to the values of the download filter
+    #[structopt(
+        long,
+        help = "Use the dowload filter in/exclude regexes for visiting as well"
+    )]
+    pub visit_filter_is_download_filter: bool,
 
     /// HTTP basic authentication credentials
     #[structopt(
