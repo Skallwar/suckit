@@ -49,6 +49,12 @@ impl Scraper {
     pub fn new(args: args::Args) -> Scraper {
         let (tx, rx) = crossbeam::channel::unbounded();
 
+        let mut args = args;
+        if args.visit_filter_is_download_filter {
+            args.include_visit = args.include_download.clone();
+            args.exclude_visit = args.exclude_download.clone();
+        }
+
         Scraper {
             downloader: downloader::Downloader::new(
                 args.tries,
@@ -226,6 +232,10 @@ impl Scraper {
         depth: i32,
         ext_depth: i32,
     ) {
+        let download_filter_matches = !scraper.args.exclude_download.is_match(url.as_str())
+            && scraper.args.include_download.is_match(url.as_str());
+        // download the page even if the download filter does not match,
+        // so its links can be discovered and added to the queue
         match scraper.downloader.get(&url) {
             Ok(response) => {
                 let data = match response.data {
@@ -246,14 +256,7 @@ impl Scraper {
                     let path_map = scraper.path_map.lock().unwrap();
                     let path = path_map.get(url.as_str()).unwrap();
 
-                    // for the origin URL, we need to check the in/exclude rules since
-                    // it is pushed into the channel unconditionally.
-                    // we want to process its links, but maybe not download it.
-                    // all other links are filtered before they are added to the channel.
-                    let filter_rules_match = depth > 0
-                        || (!scraper.args.exclude.is_match(url.as_str())
-                            && scraper.args.include.is_match(url.as_str()));
-                    if !scraper.args.dry_run && filter_rules_match {
+                    if !scraper.args.dry_run && download_filter_matches {
                         match response.filename {
                             Some(filename) => {
                                 disk::save_file(&filename, &data, &scraper.args.output);
@@ -278,7 +281,11 @@ impl Scraper {
         scraper.visited_urls.lock().unwrap().insert(url.to_string());
 
         if scraper.args.verbose {
-            info!("Visited: {}", url);
+            if download_filter_matches {
+                info!("Downloaded: {}", url);
+            } else {
+                info!("Visited: {}", url);
+            }
         }
     }
 
@@ -338,7 +345,7 @@ impl Scraper {
 
     /// If a URL should be visited (ignores `mail:`, `javascript:` and other pseudo-links)
     fn should_visit(scraper: &Scraper, url: &str) -> bool {
-        if scraper.args.exclude.is_match(url) || !scraper.args.include.is_match(url) {
+        if scraper.args.exclude_visit.is_match(url) || !scraper.args.include_visit.is_match(url) {
             return false;
         }
         match Url::parse(url) {
@@ -408,8 +415,11 @@ mod tests {
             user_agent: "suckit".to_string(),
             random_range: 0,
             verbose: true,
-            include: Regex::new("jpg").unwrap(),
-            exclude: Regex::new("png").unwrap(),
+            include_visit: Regex::new(".*").unwrap(),
+            exclude_visit: Regex::new("^$").unwrap(),
+            include_download: Regex::new("jpg").unwrap(),
+            exclude_download: Regex::new("png").unwrap(),
+            visit_filter_is_download_filter: false,
             auth: Vec::new(),
             continue_on_error: true,
             dry_run: false,
@@ -431,8 +441,11 @@ mod tests {
             user_agent: "suckit".to_string(),
             random_range: 5,
             verbose: true,
-            include: Regex::new("jpg").unwrap(),
-            exclude: Regex::new("png").unwrap(),
+            include_visit: Regex::new(".*").unwrap(),
+            exclude_visit: Regex::new("^$").unwrap(),
+            include_download: Regex::new("jpg").unwrap(),
+            exclude_download: Regex::new("png").unwrap(),
+            visit_filter_is_download_filter: false,
             auth: Vec::new(),
             continue_on_error: true,
             dry_run: false,
