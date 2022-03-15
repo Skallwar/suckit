@@ -42,8 +42,8 @@ pub fn symlink(source: &str, destination: &str, path: &Option<PathBuf>) {
     if symlink_auto(source, &destination).is_err() {
         warn!(
             "{} is already present, coulnd't create a symlink to {}",
-            destination.display(),
             source,
+            destination.display(),
         );
     }
 }
