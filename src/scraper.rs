@@ -30,7 +30,7 @@ static MAX_EMPTY_RECEIVES: usize = 10;
 static INFINITE_DEPTH: i32 = -1;
 
 /// Sleep duration on empty recv()
-static SLEEP_MILLIS: u64 = 100;
+static SLEEP_MILLIS: u64 = 500;
 static SLEEP_DURATION: time::Duration = time::Duration::from_millis(SLEEP_MILLIS);
 
 /// Producer and Consumer data structure. Handles the incoming requests and
