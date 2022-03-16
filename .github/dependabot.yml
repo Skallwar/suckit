@@ -1,14 +1,15 @@
 version: 2
 updates:
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "daily"
-      time: "02:00" # UTC
-    labels:
-      - "domain: deps"
-    commit-message:
-      prefix: "robo(deps)"
+  # ATM this only create pr to the lockfile
+  # - package-ecosystem: "cargo"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "daily"
+  #     time: "02:00" # UTC
+  #   labels:
+  #     - "domain: deps"
+  #   commit-message:
+  #     prefix: "robo(deps)"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
