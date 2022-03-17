@@ -20,13 +20,13 @@ fn test_include_exclude() {
     });
 
     // Tests below are grouped together as they depend on the local_http_server above.
-    include_filter();
-    include_multiple_filters();
-    exclude_filter();
+    download_include_filter();
+    download_include_multiple_filters();
+    download_exclude_filter();
 }
 
 // Test to use include flag for downloading pages only matching the given pattern.
-fn include_filter() {
+fn download_include_filter() {
     let output_dir = "w2";
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
@@ -57,7 +57,7 @@ fn include_filter() {
 }
 
 // Test demonstrating usage of multiple include patterns for downloading pages only matching the given pattern.
-fn include_multiple_filters() {
+fn download_include_multiple_filters() {
     let output_dir = "w1";
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
@@ -85,7 +85,7 @@ fn include_multiple_filters() {
 }
 
 // Test to use exclude flag for excluding pages matching the given pattern.
-fn exclude_filter() {
+fn download_exclude_filter() {
     let output_dir = "w3";
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
