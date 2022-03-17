@@ -1,8 +1,10 @@
+use pathdiff;
 use std::fs;
+
 use std::io::Write;
 use std::path::PathBuf;
 
-use symlink::symlink_auto;
+use symlink::symlink_file;
 
 use crate::{error, warn};
 
@@ -34,16 +36,33 @@ pub fn save_file(file_name: &str, content: &[u8], path: &Option<PathBuf>) {
 
 ///Create a symlink
 pub fn symlink(source: &str, destination: &str, path: &Option<PathBuf>) {
+    let source = match path {
+        Some(path) => path.join(source),
+        None => PathBuf::from(source),
+    };
+
+    if let Some(parent) = source.parent() {
+        match fs::create_dir_all(parent) {
+            Err(err) => {
+                error!("Couldn't create folder {}: {}", parent.display(), err);
+            }
+            Ok(()) => (),
+        }
+    }
+
     let destination = match path {
         Some(path) => path.join(destination),
         None => PathBuf::from(destination),
     };
 
-    if symlink_auto(source, &destination).is_err() {
+    let target = pathdiff::diff_paths(&destination, &source.parent().unwrap()).unwrap();
+
+    if let Err(err) = symlink_file(&target, &source) {
         warn!(
-            "{} is already present, coulnd't create a symlink to {}",
-            destination.display(),
-            source,
+            "Couldn't create symlink\n{} -> {}:\n{:#?}",
+            source.display(),
+            target.display(),
+            err,
         );
     }
 }
