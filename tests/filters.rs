@@ -28,6 +28,8 @@ fn test_include_exclude() {
 // Test to use include flag for downloading pages only matching the given pattern.
 fn download_include_filter() {
     let output_dir = "w2";
+    let _ = std::fs::remove_dir_all(output_dir);
+
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[
@@ -59,6 +61,8 @@ fn download_include_filter() {
 // Test demonstrating usage of multiple include patterns for downloading pages only matching the given pattern.
 fn download_include_multiple_filters() {
     let output_dir = "w1";
+    let _ = std::fs::remove_dir_all(output_dir);
+
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[
@@ -87,6 +91,8 @@ fn download_include_multiple_filters() {
 // Test to use exclude flag for excluding pages matching the given pattern.
 fn download_exclude_filter() {
     let output_dir = "w3";
+    let _ = std::fs::remove_dir_all(output_dir);
+
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[
