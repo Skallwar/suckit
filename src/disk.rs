@@ -16,11 +16,8 @@ pub fn save_file(file_name: &str, content: &[u8], path: &Option<PathBuf>) {
     };
 
     if let Some(parent) = path.parent() {
-        match fs::create_dir_all(parent) {
-            Err(err) => {
-                error!("Couldn't create folder {}: {}", parent.display(), err);
-            }
-            Ok(()) => (),
+        if let Err(err) = fs::create_dir_all(parent) {
+            error!("Couldn't create folder {}: {}", parent.display(), err);
         }
     }
 

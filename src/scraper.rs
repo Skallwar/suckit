@@ -176,7 +176,7 @@ impl Scraper {
             Vec::from(data)
         };
 
-        let dom = dom::Dom::new(&String::from_utf8_lossy(&utf8_data).into_owned());
+        let dom = dom::Dom::new(&String::from_utf8_lossy(&utf8_data));
         let source_path = match scraper.path_map.lock().unwrap().get(url.as_str()) {
             Some(path) => path.clone(),
             None => error!("Url {} was not found in the path map", url.as_str()),
