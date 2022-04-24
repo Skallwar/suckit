@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64-unknown-linux-gnu]
+        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu, riscv64gc-unknown-linux-gnu]
 
     steps:
       - uses: actions/checkout@v3
@@ -28,7 +28,7 @@ jobs:
 
       - name: Build release
         run: |
-          cargo build --release --target ${{ matrix.target }}
+          cargo build --release --locked --target ${{ matrix.target }}
 
       - name: Compute sha512
         run: |
