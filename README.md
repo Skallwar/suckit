@@ -5,7 +5,7 @@
 [![Deps](https://deps.rs/repo/github/Skallwar/suckit/status.svg)](https://deps.rs/repo/github/Skallwar/suckit)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![MSRV](https://img.shields.io/badge/MSRV-1.46.0-blue)
+![MSRV](https://img.shields.io/badge/MSRV-1.49.0-blue)
 
 # SuckIT
 
@@ -24,21 +24,54 @@ your disk.
 * [ ] Saves application state on CTRL-C for later pickup
 
 # Options
+```console
+USAGE:
+    suckit [FLAGS] [OPTIONS] <url>
 
-|Option|Behavior|
-|---|---|
-|`-h, --help`|Displays help information|
-|`-v, --verbose`|Activate Verbose output|
-|`-d, --depth`|Specify the level of depth to go to when visiting the website. Default is -1 (infinity)|
-|`--ext-depth`|Specify the level of depth to go to when visiting websites that have a different domain name. Default is 0 (ignore external links), -1 is infinity|
-|`-j, --jobs`|Number of threads to use|
-|`-o, --output`|Output directory where the downloaded files are written|
-|`-t, --tries`|Number of times to retry when the downloading of a page fails|
-|`-u, --user-agent`|User agent to be used for sending requests|
-|`-i, --include`|Specify a regex to include pages that match this pattern|
-|`-e, --exclude`|Specify a regex to exclude pages that match this pattern|
-|`-a, --auth`|Provide usernames and passwords for the downloader to use|
-|`--dry-run`|Do everything without saving the files to the disk|
+FLAGS:
+    -c, --continue-on-error                  Flag to enable or disable exit on error
+        --dry-run                            Do everything without saving the files to the disk
+    -h, --help                               Prints help information
+    -V, --version                            Prints version information
+    -v, --verbose                            Enable more information regarding the scraping process
+        --visit-filter-is-download-filter    Use the dowload filter in/exclude regexes for visiting as well
+
+OPTIONS:
+    -a, --auth <auth>...
+            HTTP basic authentication credentials space-separated as "username password host". Can be repeated for
+            multiple credentials as "u1 p1 h1 u2 p2 h2"
+        --delay <delay>
+            Add a delay in seconds between downloads to reduce the likelihood of getting banned [default: 0]
+
+    -d, --depth <depth>
+            Maximum recursion depth to reach when visiting. Default is -1 (infinity) [default: -1]
+
+    -e, --exclude-download <exclude-download>
+            Regex filter to exclude saving pages that match this expression [default: $^]
+
+        --exclude-visit <exclude-visit>
+            Regex filter to exclude visiting pages that match this expression [default: $^]
+
+        --ext-depth <ext-depth>
+            Maximum recursion depth to reach when visiting external domains. Default is 0. -1 means infinity [default:
+            0]
+    -i, --include-download <include-download>
+            Regex filter to limit to only saving pages that match this expression [default: .*]
+
+        --include-visit <include-visit>
+            Regex filter to limit to only visiting pages that match this expression [default: .*]
+
+    -j, --jobs <jobs>                            Maximum number of threads to use concurrently [default: 1]
+    -o, --output <output>                        Output directory
+        --random-range <random-range>
+            Generate an extra random delay between downloads, from 0 to this number. This is added to the base delay
+            seconds [default: 0]
+    -t, --tries <tries>                          Maximum amount of retries on download failure [default: 20]
+    -u, --user-agent <user-agent>                User agent to be used for sending requests [default: suckit]
+
+ARGS:
+    <url>    Entry point of the scraping
+```
 
 # Example
 
