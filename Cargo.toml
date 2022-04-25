@@ -1,9 +1,9 @@
 [package]
 name = "suckit"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2018"
 authors = ["Esteban \"Skallwar\" Blanc <estblcsk@gmail.com>",
-	   "Arthur \"CohenArthur\" Cohen <arthur.cohen@epita.fr>"]
+	   "Arthur \"CohenArthur\" Cohen <cohenarthur.dev@gmail.com>"]
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/skallwar/suckit"
 repository = "https://github.com/skallwar/suckit"
@@ -20,7 +20,7 @@ include = [
 ]
 
 [package.metadata]
-msrv = "1.44.1"
+msrv = "1.49.0"
 
 [lib]
 name = "suckit"
