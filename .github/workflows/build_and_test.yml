@@ -21,17 +21,25 @@ jobs:
           fmt' (version $(cargo fmt --version))"; false)
 
   tests:
+    needs: [lint]
     name: Tests ${{ matrix.target }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         target:
           - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
         os:
           - ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Install qemu-user-static
+      if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' }}
+      run: |
+        sudo apt update
+        sudo apt install qemu-user-static
 
     - name: Rustup setup
       uses: actions-rs/toolchain@v1
@@ -40,12 +48,16 @@ jobs:
         default: true
         target: ${{ matrix.target }}
 
+    - name: Install cross
+      run:
+          cargo install cross
+
     - name: Unit tests
       run: |
-          cargo test --target ${{ matrix.target }}
+          cross test --locked --target ${{ matrix.target }}
 
   build:
-    needs: [lint, tests]
+    needs: [lint]
 
     name: Build ${{ matrix.target }}-${{ matrix.rust }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -53,6 +65,7 @@ jobs:
       matrix:
         target:
           - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
         rust:
           - stable
           - 1.51.0
@@ -62,6 +75,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Install qemu-user-static
+      if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' }}
+      run: |
+        sudo apt update
+        sudo apt install qemu-user-static
+
     - name: Rustup setup
       uses: actions-rs/toolchain@v1
       with:
@@ -69,10 +88,14 @@ jobs:
         default: true
         target: ${{ matrix.target }}
 
+    - name: Install cross
+      run:
+          cargo install cross
+
     - name: Check
-      run: |
-          cargo check --locked --target ${{ matrix.target }}
+      run:
+          cross check --locked --target ${{ matrix.target }}
 
     - name: Build
       run: |
-          cargo build --locked --target ${{ matrix.target }}
+          cross build --locked --target ${{ matrix.target }}
