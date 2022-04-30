@@ -71,8 +71,8 @@ jobs:
 
     - name: Check
       run: |
-          cargo check --target ${{ matrix.target }}
+          cargo check --locked --target ${{ matrix.target }}
 
     - name: Build
       run: |
-          cargo build --target ${{ matrix.target }}
+          cargo build --locked --target ${{ matrix.target }}
