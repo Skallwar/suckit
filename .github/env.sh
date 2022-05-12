@@ -24,6 +24,15 @@ case "$1" in
 		target_cc="aarch64-linux-gnu-gcc"
 
 	;;
+	riscv64*)
+		arch="riscv64"
+		sysroot="/usr/lib/riscv64-linux-gnu/"
+		ubuntu_cross_pkg_list="gcc-riscv64-linux-gnu"
+		# YES they are the same but otherwise it fails
+		target_linker="riscv64-linux-gnu-gcc"
+		target_cc="riscv64-linux-gnu-gcc"
+
+	;;
 	x86_64*)
 		target_linker="gcc"
 		target_cc="gcc"
