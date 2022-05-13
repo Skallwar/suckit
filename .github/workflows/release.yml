@@ -9,7 +9,10 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu, riscv64gc-unknown-linux-gnu]
+        target: 
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - riscv64gc-unknown-linux-gnu
 
     steps:
       - uses: actions/checkout@v3
@@ -20,6 +23,23 @@ jobs:
           toolchain: stable
           default: true
           target: ${{ matrix.target }}
+
+      - name: Set environment variables
+        run: |
+          .github/env.sh ${{ matrix.target }} >> $GITHUB_ENV
+
+      - name: Install libssl (native)
+        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: |
+          sudo apt update
+          sudo apt install libssl-dev
+
+      - name: Install libssl (cross)
+        uses: ryankurte/action-apt@v0.3.0
+        if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' }}
+        with:
+          arch: ${{ env.MULTILIB_ARCH }}
+          packages: "${{ env.UBUNTU_CROSS_PKG_LIST }} libssl-dev:${{ env.MULTILIB_ARCH }}"
 
       - name: Get release upload url
         id: get_release
