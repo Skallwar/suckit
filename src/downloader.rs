@@ -64,6 +64,7 @@ impl Downloader {
 
         Downloader {
             client: reqwest::blocking::ClientBuilder::new()
+                .danger_accept_invalid_certs(true)
                 .cookie_store(true)
                 .user_agent(user_agent)
                 .build()
