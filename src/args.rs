@@ -148,6 +148,9 @@ pub struct Args {
     /// If set, run without saving anything to the disk
     #[structopt(long, help = "Do everything without saving the files to the disk")]
     pub dry_run: bool,
+
+    #[structopt(long, help = "Dissable SSL certificates verification")]
+    pub disable_certs_checks: bool,
 }
 
 impl Args {

@@ -52,7 +52,13 @@ fn parse_auth(auth: &[String], origin: &Url) -> Result<(String, Option<String>, 
 
 impl Downloader {
     /// Create a new Downloader
-    pub fn new(tries: usize, user_agent: &str, auth: &[String], origin: &Url) -> Downloader {
+    pub fn new(
+        tries: usize,
+        user_agent: &str,
+        disable_certs_checks: bool,
+        auth: &[String],
+        origin: &Url,
+    ) -> Downloader {
         // Create a mapping of hosts to username, password tuples for authentication
         let mut auth_map = HashMap::new();
         // Iterate over the auth string in chunks of 3 items each for (username, password, host)
@@ -64,7 +70,7 @@ impl Downloader {
 
         Downloader {
             client: reqwest::blocking::ClientBuilder::new()
-                .danger_accept_invalid_certs(true)
+                .danger_accept_invalid_certs(disable_certs_checks)
                 .cookie_store(true)
                 .user_agent(user_agent)
                 .build()
@@ -179,7 +185,7 @@ mod tests {
     #[test]
     fn test_download_url() {
         let url: Url = Url::parse("https://lwn.net").unwrap();
-        match Downloader::new(1, "suckit", &[], &url).get(&url) {
+        match Downloader::new(1, "suckit", false, &[], &url).get(&url) {
             Err(e) => assert!(false, "Fail to download lwn.net: {:?}", e),
             _ => {}
         }
