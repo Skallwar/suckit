@@ -59,6 +59,7 @@ impl Scraper {
             downloader: downloader::Downloader::new(
                 args.tries,
                 &args.user_agent,
+                args.disable_certs_checks,
                 &args.auth,
                 &args.origin,
             ),
@@ -423,6 +424,7 @@ mod tests {
             auth: Vec::new(),
             continue_on_error: true,
             dry_run: false,
+            disable_certs_checks: false,
         };
 
         let _ = Scraper::new(args);
@@ -449,6 +451,7 @@ mod tests {
             auth: Vec::new(),
             continue_on_error: true,
             dry_run: false,
+            disable_certs_checks: false,
         };
 
         let _ = Scraper::new(args);
