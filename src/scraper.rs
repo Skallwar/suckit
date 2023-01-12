@@ -189,15 +189,16 @@ impl Scraper {
             .for_each(|next_url| {
                 let url_to_parse = Scraper::normalize_url(next_url.clone());
 
-                let mut next_full_url = match url.join(url_to_parse.as_str()) {
+                let next_full_url = match url.join(url_to_parse.as_str()) {
                     Ok(url) => url,
                     Err(e) => panic!("Failed to parse url: {} | Error: {}", next_url, e),
                 };
 
-                next_full_url.set_fragment(None);
-                let path = url_helper::to_path(&next_full_url);
+                let path = url_helper::to_path(&next_full_url, true);
+                let path_no_fragments = url_helper::to_path(&next_full_url, false);
 
-                if scraper.map_url_path(&next_full_url, path.clone()) {
+                // We only add urls without fragments to avoid duplication
+                if scraper.map_url_path(&next_full_url, path_no_fragments.clone()) {
                     if !Scraper::is_on_another_domain(next_url, url) {
                         // If we are determining for a local domain
                         if scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth {
@@ -293,7 +294,10 @@ impl Scraper {
     /// Run through the channel and complete it
     pub fn run(&mut self) {
         /* Push the origin URL and depth (0) through the channel */
-        self.map_url_path(&self.args.origin, url_helper::to_path(&self.args.origin));
+        self.map_url_path(
+            &self.args.origin,
+            url_helper::to_path(&self.args.origin, false),
+        );
         Scraper::push(&self.transmitter, self.args.origin.clone(), 0, 0);
 
         thread::scope(|thread_scope| {

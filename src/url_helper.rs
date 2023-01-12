@@ -7,7 +7,7 @@ use url::Url;
 const FILE_NAME_MAX_LENGTH: usize = 255;
 
 /// Convert an Url to the corresponding path
-pub fn to_path(url: &Url) -> String {
+pub fn to_path(url: &Url, with_fragment: bool) -> String {
     let url_domain = url.host_str().unwrap();
 
     let mut url_path_and_query = url.path().to_string();
@@ -38,7 +38,11 @@ pub fn to_path(url: &Url) -> String {
         filename = format!("{:x}.html", digest);
     }
 
-    format!("{}{}/{}", url_domain, parent, filename)
+    match (url.fragment(), with_fragment) {
+        (Some(fragment), true) => format!("{}{}/{}#{}", url_domain, parent, filename, fragment),
+        (None, true) => format!("{}{}/{}", url_domain, parent, filename),
+        (_, false) => format!("{}{}/{}", url_domain, parent, filename),
+    }
 }
 
 #[cfg(test)]
@@ -47,49 +51,65 @@ mod tests {
 
     #[test]
     fn url_to_path_domain_only() {
-        let str = super::to_path(&Url::parse("https://lwn.net/").unwrap());
+        let str = super::to_path(&Url::parse("https://lwn.net/").unwrap(), false);
 
         assert_eq!(str, "lwn.net/index.html");
     }
 
     #[test]
     fn url_to_path_domain_only_no_slash() {
-        let str = super::to_path(&Url::parse("https://lwn.net").unwrap());
+        let str = super::to_path(&Url::parse("https://lwn.net").unwrap(), false);
 
         assert_eq!(str, "lwn.net/index.html");
     }
 
     #[test]
     fn url_to_path() {
-        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/index.html").unwrap());
+        let str = super::to_path(
+            &Url::parse("https://lwn.net/Kernel/index.html").unwrap(),
+            false,
+        );
 
         assert_eq!(str, "lwn.net/Kernel/index.html");
     }
 
     #[test]
     fn url_to_path_index() {
-        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/").unwrap());
+        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/").unwrap(), false);
 
         assert_eq!(str, "lwn.net/Kernel/index.html");
     }
 
     #[test]
     fn url_to_path_index_no_slash() {
-        let str = super::to_path(&Url::parse("https://lwn.net/Kernel").unwrap());
+        let str = super::to_path(&Url::parse("https://lwn.net/Kernel").unwrap(), false);
 
         assert_eq!(str, "lwn.net/Kernel/index_no_slash.html");
     }
 
     #[test]
     fn url_to_path_fragment() {
-        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/#fragment").unwrap());
+        let str = super::to_path(
+            &Url::parse("https://lwn.net/Kernel/#fragment").unwrap(),
+            true,
+        );
+
+        assert_eq!(str, "lwn.net/Kernel/index.html#fragment");
+    }
+
+    #[test]
+    fn url_to_path_no_fragment() {
+        let str = super::to_path(
+            &Url::parse("https://lwn.net/Kernel/#fragment").unwrap(),
+            false,
+        );
 
         assert_eq!(str, "lwn.net/Kernel/index.html");
     }
 
     #[test]
     fn url_to_path_to_long_md5() {
-        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.html").unwrap());
+        let str = super::to_path(&Url::parse("https://lwn.net/Kernel/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.html").unwrap(), false);
 
         assert_eq!(str, "lwn.net/Kernel/5ca82767de71fe8930587e82bb994903.html");
     }
@@ -101,6 +121,7 @@ mod tests {
                 "https://google.com/foobar/platform-redirect/?next=/configuration/releases/",
             )
             .unwrap(),
+            false,
         );
         assert_eq!(str, "google.com/foobar/platform-redirect/__querystring__next=/configuration/releases/index.html");
     }
