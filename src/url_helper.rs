@@ -40,8 +40,7 @@ pub fn to_path(url: &Url, with_fragment: bool) -> String {
 
     match (url.fragment(), with_fragment) {
         (Some(fragment), true) => format!("{}{}/{}#{}", url_domain, parent, filename, fragment),
-        (None, true) => format!("{}{}/{}", url_domain, parent, filename),
-        (_, false) => format!("{}{}/{}", url_domain, parent, filename),
+        (_, _) => format!("{}{}/{}", url_domain, parent, filename),
     }
 }
 
