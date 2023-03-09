@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use url::Url;
 
-use crate::warn;
+use crate::{filetype::FileType, warn};
 
 use super::response::{Response, ResponseData};
 
@@ -81,8 +81,14 @@ impl Downloader {
     }
 
     ///Check if the type in the 'content-type' head field is html
-    fn is_html(content_type: &str) -> bool {
-        content_type.contains("text/html")
+    fn get_filetype(content_type: &str) -> FileType {
+        if content_type.contains("text/html") {
+            FileType::Html
+        } else if content_type.contains("text/css") {
+            FileType::Css
+        } else {
+            FileType::Other
+        }
     }
 
     ///Return the filename based on the HTML header of the response
@@ -140,18 +146,18 @@ impl Downloader {
                         None => (String::from("text/html"), None),
                     };
 
-                let filename = if !Downloader::is_html(&data_type) {
-                    Downloader::get_filename(data.headers())
-                } else {
-                    None
+                let filename = match Downloader::get_filetype(&data_type) {
+                    FileType::Other => Downloader::get_filename(data.headers()),
+                    _ => None,
                 };
 
                 let mut raw_data: Vec<u8> = Vec::new();
                 data.copy_to(&mut raw_data).unwrap();
-                let response_data = if Downloader::is_html(&data_type) {
-                    ResponseData::Html(raw_data)
-                } else {
-                    ResponseData::Other(raw_data)
+
+                let response_data = match Downloader::get_filetype(&data_type) {
+                    FileType::Html => ResponseData::Html(raw_data),
+                    FileType::Css => ResponseData::Css(raw_data),
+                    FileType::Other => ResponseData::Other(raw_data),
                 };
 
                 Ok(Response::new(response_data, filename, charset))

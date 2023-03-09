@@ -1,6 +1,7 @@
 /// Separates HTML responses and other content (PDFs, images...)
 pub enum ResponseData {
     Html(Vec<u8>),
+    Css(Vec<u8>),
     Other(Vec<u8>),
 }
 

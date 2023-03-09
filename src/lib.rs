@@ -2,6 +2,7 @@ pub mod args;
 pub mod disk;
 pub mod dom;
 pub mod downloader;
+pub mod filetype;
 pub mod logger;
 pub mod response;
 pub mod scraper;

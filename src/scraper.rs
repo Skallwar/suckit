@@ -226,6 +226,91 @@ impl Scraper {
         }
     }
 
+    fn handle_css(
+        scraper: &Scraper,
+        transmitter: &Sender<(Url, i32, i32)>,
+        url: &Url,
+        depth: i32,
+        ext_depth: i32,
+        data: &[u8],
+        http_charset: Option<String>,
+    ) -> Vec<u8> {
+        let charset_source_str = match Self::find_charset(data, http_charset) {
+            Some(s) => s,
+            None => {
+                warn!("Charset not found for {}, defaulting to UTF-8", url);
+                String::from("utf-8")
+            }
+        };
+
+        let need_charset_conversion = Self::needs_charset_conversion(&charset_source_str);
+
+        let charset_source = match encoding_rs::Encoding::for_label(charset_source_str.as_bytes()) {
+            Some(encoder) => encoder,
+            None => {
+                warn!(
+                    "Charset {} not supported for {}, defaulting to UTF-8",
+                    charset_source_str, url
+                );
+                encoding_rs::UTF_8
+            }
+        };
+        let charset_utf8 = encoding_rs::UTF_8;
+        let utf8_data = if need_charset_conversion {
+            Self::charset_convert(data, charset_source, charset_utf8)
+        } else {
+            Vec::from(data)
+        };
+
+        let dom = dom::Dom::new(&String::from_utf8_lossy(&utf8_data));
+        let source_path = match scraper.path_map.lock().unwrap().get(url.as_str()) {
+            Some(path) => path.clone(),
+            None => error!("Url {} was not found in the path map", url.as_str()),
+        };
+
+        dom.find_urls_as_strings()
+            .into_iter()
+            .filter(|candidate| Scraper::should_visit(scraper, candidate))
+            .for_each(|next_url| {
+                let url_to_parse = Scraper::normalize_url(next_url.clone());
+
+                let next_full_url = match url.join(url_to_parse.as_str()) {
+                    Ok(url) => url,
+                    Err(e) => panic!("Failed to parse url: {} | Error: {}", next_url, e),
+                };
+
+                let path = url_helper::to_path(&next_full_url, true);
+                let path_no_fragments = url_helper::to_path(&next_full_url, false);
+
+                // We only add urls without fragments to avoid duplication
+                if scraper.map_url_path(&next_full_url, path_no_fragments.clone()) {
+                    if !Scraper::is_on_another_domain(next_url, url) {
+                        // If we are determining for a local domain
+                        if scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth {
+                            Scraper::push(transmitter, next_full_url, depth + 1, ext_depth);
+                        }
+                    } else {
+                        // If we are determining for an external domain
+                        if scraper.args.ext_depth == INFINITE_DEPTH
+                            || ext_depth < scraper.args.ext_depth
+                        {
+                            Scraper::push(transmitter, next_full_url, depth, ext_depth + 1);
+                        }
+                    }
+                }
+
+                scraper.fix_domtree(next_url, &source_path, &path);
+            });
+
+        let utf8_data = dom.serialize().into_bytes();
+
+        if need_charset_conversion {
+            Self::charset_convert(&utf8_data, charset_utf8, charset_source)
+        } else {
+            utf8_data
+        }
+    }
+
     /// Process a single URL
     fn handle_url(
         scraper: &Scraper,
@@ -242,6 +327,15 @@ impl Scraper {
             Ok(response) => {
                 let data = match response.data {
                     response::ResponseData::Html(data) => Scraper::handle_html(
+                        scraper,
+                        transmitter,
+                        &url,
+                        depth,
+                        ext_depth,
+                        &data,
+                        response.charset,
+                    ),
+                    response::ResponseData::Css(data) => Scraper::handle_css(
                         scraper,
                         transmitter,
                         &url,
