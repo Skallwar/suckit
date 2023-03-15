@@ -235,6 +235,7 @@ impl Scraper {
         data: &[u8],
         http_charset: Option<String>,
     ) -> Vec<u8> {
+        println!("handling css");
         let charset_source_str = match Self::find_charset(data, http_charset) {
             Some(s) => s,
             None => {
@@ -266,21 +267,52 @@ impl Scraper {
             None => error!("Url {} was not found in the path map", url.as_str()),
         };
 
-        {
-            let utf8_data_as_string = String::from_utf8_lossy(&utf8_data);
-            let mut parser_input = cssparser::ParserInput::new(&utf8_data_as_string);
+        let css_string = String::from_utf8_lossy(&utf8_data).to_string();
+        let url_regex = Regex::new(r"url\(([^)]+)\)").unwrap();
 
-            let mut parser = cssparser::Parser::new(&mut parser_input);
-            let mut vec: Vec<String> = Vec::new();
-            while let Ok(token) = parser.next() {
-                match token {
-                    cssparser::Token::UnquotedUrl(url) => vec.push(url.to_string()),
-                    _ => (),
+        let urls: Vec<String> = url_regex
+            .captures_iter(&css_string)
+            .map(|url| url.get(1).unwrap().as_str().to_string())
+            .collect();
+
+        urls.into_iter()
+            .filter(|candidate| Scraper::should_visit(scraper, candidate))
+            .for_each(|mut next_url| {
+                let url_to_parse = Scraper::normalize_url(next_url.clone());
+
+                let next_full_url = match url.join(url_to_parse.as_str()) {
+                    Ok(url) => url,
+                    Err(e) => panic!("Failed to parse url: {} | Error: {}", next_url, e),
+                };
+
+                let path = url_helper::to_path(&next_full_url, true);
+                let path_no_fragments = url_helper::to_path(&next_full_url, false);
+
+                // We only add urls without fragments to avoid duplication
+                if scraper.map_url_path(&next_full_url, path_no_fragments.clone()) {
+                    if !Scraper::is_on_another_domain(&next_url, url) {
+                        // If we are determining for a local domain
+                        if scraper.args.depth == INFINITE_DEPTH || depth < scraper.args.depth {
+                            Scraper::push(transmitter, next_full_url, depth + 1, ext_depth);
+                        }
+                    } else {
+                        // If we are determining for an external domain
+                        if scraper.args.ext_depth == INFINITE_DEPTH
+                            || ext_depth < scraper.args.ext_depth
+                        {
+                            Scraper::push(transmitter, next_full_url, depth, ext_depth + 1);
+                        }
+                    }
                 }
-            }
-        }
 
-        utf8_data
+                scraper.fix_domtree(&mut next_url, &source_path, &path);
+            });
+
+        if need_charset_conversion {
+            Self::charset_convert(&utf8_data, charset_utf8, charset_source)
+        } else {
+            utf8_data
+        }
     }
 
     /// Process a single URL
