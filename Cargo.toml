@@ -46,7 +46,6 @@ lazy_static = "1.4.0"
 pathdiff = "^0.2"
 md5 = "^0.7"
 symlink = "^0.1.0"
-cssparser = "0.29.6"
 
 [dev-dependencies]
 tiny_http = "^0.12"
