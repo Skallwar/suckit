@@ -235,7 +235,6 @@ impl Scraper {
         data: &[u8],
         http_charset: Option<String>,
     ) -> Vec<u8> {
-        println!("handling css");
         let charset_source_str = match Self::find_charset(data, http_charset) {
             Some(s) => s,
             None => {
