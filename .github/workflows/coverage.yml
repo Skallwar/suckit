@@ -22,11 +22,10 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          version: '0.18.2'
-          args: '-- --test-threads 1'
+      - name: Run tarpaulin
+        run: |
+          cargo install cargo-tarpaulin
+          cargo tarpaulin --engine llvm -- --test-threads 1
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
