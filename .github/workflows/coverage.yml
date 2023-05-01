@@ -25,7 +25,7 @@ jobs:
       - name: Run tarpaulin
         run: |
           cargo install cargo-tarpaulin
-          cargo tarpaulin --engine llvm -- --test-threads 1
+          cargo tarpaulin --engine llvm --out Xml -- --test-threads 1
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
