@@ -31,7 +31,11 @@ pub fn spawn_local_http_server(
                 response.add_header(h);
                 response.boxed()
             } else {
-                Response::from_file(File::open(page).unwrap()).boxed()
+                let file = match request.url() {
+                    "/" => format!("{}{}", page, "index.html"),
+                    other => format!("{}{}", page, other),
+                };
+                Response::from_file(File::open(file).unwrap()).boxed()
             };
 
             match headers {

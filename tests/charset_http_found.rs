@@ -8,6 +8,7 @@ use std::sync::Once;
 
 use lazy_static::lazy_static;
 
+const PAGE: &'static str = "tests/fixtures/";
 const PAGE_NO_META: &'static str = "tests/fixtures/charset_test_html_no_meta.html";
 const IP: &'static str = "0.0.0.0";
 static START: Once = Once::new();
@@ -21,13 +22,14 @@ lazy_static! {
 fn test_http_charset_found() {
     // Spawn a single instance of a local http server usable by all tests in this module.
     START.call_once(|| {
-        fixtures::spawn_local_http_server(PAGE_NO_META, false, Some(&CHARSET_HEADER));
+        fixtures::spawn_local_http_server(PAGE, false, Some(&CHARSET_HEADER));
     });
 
     let output_dir = "charset_html_found";
     let file_dir = format!("{}/{}", output_dir, IP);
+    let url = format!("{}/charset_test_html_no_meta.html", fixtures::HTTP_ADDR);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[fixtures::HTTP_ADDR, "-o", output_dir])
+        .args(&[&url, "-o", output_dir])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()

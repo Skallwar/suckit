@@ -8,7 +8,7 @@ use std::process::Command;
 use std::process::Stdio;
 use std::sync::Once;
 
-const PAGE: &'static str = "tests/fixtures/index.html";
+const PAGE: &'static str = "tests/fixtures/";
 const IP: &'static str = "0.0.0.0";
 static START: Once = Once::new();
 
@@ -119,10 +119,8 @@ fn visit_exclude_filter() {
     let status = cmd.wait().unwrap();
     assert!(status.success());
     let paths = read_dir(&files_dir).unwrap();
-    let mp3_count = get_file_count_with_pattern(".mp3", &files_dir).unwrap();
-    let txt_count = get_file_count_with_pattern(".txt", &files_dir).unwrap();
-    let index_file = 1;
-    assert_eq!(paths.count(), mp3_count + txt_count + index_file);
+    let jpeg_count = get_file_count_with_pattern(".jpe?g", &files_dir).unwrap();
+    assert_eq!(jpeg_count, 0);
 
     std::fs::remove_dir_all(output_dir).unwrap();
 }
@@ -214,10 +212,8 @@ fn download_exclude_filter() {
     let status = cmd.wait().unwrap();
     assert!(status.success());
     let paths = read_dir(&files_dir).unwrap();
-    let mp3_count = get_file_count_with_pattern(".mp3", &files_dir).unwrap();
-    let txt_count = get_file_count_with_pattern(".txt", &files_dir).unwrap();
-    let index_file = 1;
-    assert_eq!(paths.count(), mp3_count + txt_count + index_file);
+    let jpeg_count = get_file_count_with_pattern(".jpe?g", &files_dir).unwrap();
+    assert_eq!(jpeg_count, 0);
 
     std::fs::remove_dir_all(output_dir).unwrap();
 }
