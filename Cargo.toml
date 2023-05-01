@@ -50,6 +50,8 @@ symlink = "^0.1.0"
 [dev-dependencies]
 tiny_http = "^0.12"
 subprocess = "^0.2"
+mktemp = "^0.5"
+portpicker = "^0.1"
 
 [profile.release]
 lto = true
