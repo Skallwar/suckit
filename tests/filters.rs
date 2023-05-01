@@ -13,38 +13,50 @@ const IP: &'static str = "0.0.0.0";
 static START: Once = Once::new();
 
 #[test]
-fn test_include_exclude() {
-    // Spawn a single instance of a local http server usable by all tests in this module.
-    START.call_once(|| {
-        fixtures::spawn_local_http_server(PAGE, false, None);
-    });
+fn visit_filter_is_download_filter() {
+    let ip = fixtures::spawn_local_http_server(PAGE, false, None);
+    let url = format!("http://{}", ip);
 
-    // Tests below are grouped together as they depend on the local_http_server above.
-    download_include_filter();
-    download_include_multiple_filters();
-    download_exclude_filter();
-
-    visit_include_filter();
-    visit_include_multiple_filters();
-    visit_exclude_filter();
-}
-
-// Test to use include flag for visiting pages only matching the given pattern.
-fn visit_include_filter() {
-    let output_dir = "w2";
-    let _ = std::fs::remove_dir_all(output_dir);
+    let tempdir = mktemp::Temp::new_dir().unwrap();
+    let output_dir = tempdir.to_str().unwrap();
 
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[
-            fixtures::HTTP_ADDR,
+            &url,
             "-o",
             output_dir,
-            "--include-visit",
-            "mp[3-4]",
-            "-j",
-            "16",
+            "-v",
+            "-e",
+            "no_download_no_visit.html",
+            "--visit-filter-is-download-filter",
         ])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let result = cmd.wait_with_output().unwrap();
+    let stdout_str = unsafe { String::from_utf8_unchecked(result.stdout) };
+    assert!(result.status.success());
+
+    let paths = read_dir(&files_dir).unwrap();
+
+    assert!(!stdout_str.contains("should_not_get_visited.html"));
+}
+
+// Test to use include flag for visiting pages only matching the given pattern.
+#[test]
+fn visit_include_filter() {
+    let ip = fixtures::spawn_local_http_server(PAGE, false, None);
+    let url = format!("http://{}", ip);
+
+    let tempdir = mktemp::Temp::new_dir().unwrap();
+    let output_dir = tempdir.to_str().unwrap();
+
+    let files_dir = format!("{}/{}/", output_dir, IP);
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
+        .args(&[&url, "-o", output_dir, "--include-visit", "mp[3-4]"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
@@ -58,26 +70,20 @@ fn visit_include_filter() {
         paths.count() - 1, // minus one because of index.html which is downloaded unconditionally
         get_file_count_with_pattern(".mp3", &files_dir).unwrap()
     );
-
-    std::fs::remove_dir_all(output_dir).unwrap();
 }
 
 // Test demonstrating usage of multiple include patterns for visiting pages only matching the given pattern.
+#[test]
 fn visit_include_multiple_filters() {
-    let output_dir = "w1";
-    let _ = std::fs::remove_dir_all(output_dir);
+    let ip = fixtures::spawn_local_http_server(PAGE, false, None);
+    let url = format!("http://{}", ip);
+
+    let tempdir = mktemp::Temp::new_dir().unwrap();
+    let output_dir = tempdir.to_str().unwrap();
 
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[
-            fixtures::HTTP_ADDR,
-            "-o",
-            output_dir,
-            "--include-visit",
-            "(mp[3-4])|(txt)",
-            "-j",
-            "16",
-        ])
+        .args(&[&url, "-o", output_dir, "--include-visit", "(mp[3-4])|(txt)"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
@@ -91,26 +97,20 @@ fn visit_include_multiple_filters() {
         paths.count() - 1, // minus one because of index.html which is downloaded unconditionally
         mp3_count + txt_count
     );
-
-    std::fs::remove_dir_all(output_dir).unwrap();
 }
 
 // Test to use exclude flag for excluding pages matching the given pattern.
+#[test]
 fn visit_exclude_filter() {
-    let output_dir = "w3";
-    let _ = std::fs::remove_dir_all(output_dir);
+    let ip = fixtures::spawn_local_http_server(PAGE, false, None);
+    let url = format!("http://{}", ip);
+
+    let tempdir = mktemp::Temp::new_dir().unwrap();
+    let output_dir = tempdir.to_str().unwrap();
 
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[
-            fixtures::HTTP_ADDR,
-            "-o",
-            output_dir,
-            "--exclude-visit",
-            "jpe?g",
-            "-j",
-            "16",
-        ])
+        .args(&[&url, "-o", output_dir, "--exclude-visit", "jpe?g"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
@@ -118,29 +118,23 @@ fn visit_exclude_filter() {
 
     let status = cmd.wait().unwrap();
     assert!(status.success());
-    let paths = read_dir(&files_dir).unwrap();
+
     let jpeg_count = get_file_count_with_pattern(".jpe?g", &files_dir).unwrap();
     assert_eq!(jpeg_count, 0);
-
-    std::fs::remove_dir_all(output_dir).unwrap();
 }
 
 // Test to use include flag for downloading pages only matching the given pattern.
+#[test]
 fn download_include_filter() {
-    let output_dir = "w2";
-    let _ = std::fs::remove_dir_all(output_dir);
+    let ip = fixtures::spawn_local_http_server(PAGE, false, None);
+    let url = format!("http://{}", ip);
+
+    let tempdir = mktemp::Temp::new_dir().unwrap();
+    let output_dir = tempdir.to_str().unwrap();
 
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[
-            fixtures::HTTP_ADDR,
-            "-o",
-            output_dir,
-            "-i",
-            "mp[3-4]",
-            "-j",
-            "16",
-        ])
+        .args(&[&url, "-o", output_dir, "-i", "mp[3-4]"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
@@ -159,51 +153,42 @@ fn download_include_filter() {
 }
 
 // Test demonstrating usage of multiple include patterns for downloading pages only matching the given pattern.
+#[test]
 fn download_include_multiple_filters() {
-    let output_dir = "w1";
-    let _ = std::fs::remove_dir_all(output_dir);
+    let ip = fixtures::spawn_local_http_server(PAGE, false, None);
+    let url = format!("http://{}", ip);
+
+    let tempdir = mktemp::Temp::new_dir().unwrap();
+    let output_dir = tempdir.to_str().unwrap();
 
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[
-            fixtures::HTTP_ADDR,
-            "-o",
-            output_dir,
-            "-i",
-            "(mp[3-4])|(txt)",
-            "-j",
-            "16",
-        ])
+        .args(&[&url, "-o", output_dir, "-i", "(mp[3-4])|(txt)"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
         .unwrap();
     let status = cmd.wait().unwrap();
     assert!(status.success());
+
     let paths = read_dir(&files_dir).unwrap();
     let mp3_count = get_file_count_with_pattern(".mp3", &files_dir).unwrap();
     let txt_count = get_file_count_with_pattern(".txt", &files_dir).unwrap();
     assert_eq!(paths.count(), mp3_count + txt_count);
-
-    std::fs::remove_dir_all(output_dir).unwrap();
 }
 
 // Test to use exclude flag for excluding pages matching the given pattern.
+#[test]
 fn download_exclude_filter() {
-    let output_dir = "w3";
-    let _ = std::fs::remove_dir_all(output_dir);
+    let ip = fixtures::spawn_local_http_server(PAGE, false, None);
+    let url = format!("http://{}", ip);
+
+    let tempdir = mktemp::Temp::new_dir().unwrap();
+    let output_dir = tempdir.to_str().unwrap();
 
     let files_dir = format!("{}/{}/", output_dir, IP);
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[
-            fixtures::HTTP_ADDR,
-            "-o",
-            output_dir,
-            "-e",
-            "jpe?g",
-            "-j",
-            "16",
-        ])
+        .args(&[&url, "-o", output_dir, "-e", "jpe?g"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
@@ -214,6 +199,4 @@ fn download_exclude_filter() {
     let paths = read_dir(&files_dir).unwrap();
     let jpeg_count = get_file_count_with_pattern(".jpe?g", &files_dir).unwrap();
     assert_eq!(jpeg_count, 0);
-
-    std::fs::remove_dir_all(output_dir).unwrap();
 }

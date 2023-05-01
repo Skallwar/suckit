@@ -5,36 +5,26 @@ mod fixtures;
 use std::fs::read_dir;
 use std::process::Command;
 use std::process::Stdio;
-use std::sync::Once;
 
 const PAGE: &'static str = "tests/fixtures/";
 const IP: &'static str = "0.0.0.0";
-static START: Once = Once::new();
-
-#[test]
-fn test_auth() {
-    // Spawn a single instance of a local http server usable by all tests in this module.
-    START.call_once(|| {
-        fixtures::spawn_local_http_server(PAGE, true, None);
-    });
-
-    // Tests below are grouped together as they depend on the local_http_server above.
-    auth_different_host();
-    auth_valid();
-}
 
 // Shouldn't supply credentials to a non-matching host
+#[test]
 fn auth_different_host() {
-    let output_dir = "w4";
+    let ip = fixtures::spawn_local_http_server(PAGE, true, None);
+    let url = format!("http://{}", ip);
+
+    let tempdir = mktemp::Temp::new_dir().unwrap();
+    let output_dir = tempdir.to_str().unwrap();
+
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
         .args(&[
-            fixtures::HTTP_ADDR,
+            &url,
             "-o",
-            "w4",
+            output_dir,
             "-a",
             "username password example.com",
-            "-j",
-            "16",
         ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -44,25 +34,22 @@ fn auth_different_host() {
     let status = cmd.wait().unwrap();
     assert!(status.success());
     let paths = read_dir(format!("{}/{}", output_dir, IP)).unwrap();
+
     // Only the initial invalid response file should be present
     assert_eq!(paths.count(), 1);
-
-    std::fs::remove_dir_all(output_dir).unwrap();
 }
 
 // Should authenticate with credentials to host (defaulting to origin host)
+#[test]
 fn auth_valid() {
-    let output_dir = "w5";
+    let ip = fixtures::spawn_local_http_server(PAGE, false, None);
+    let url = format!("http://{}", ip);
+
+    let tempdir = mktemp::Temp::new_dir().unwrap();
+    let output_dir = tempdir.to_str().unwrap();
+
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_suckit"))
-        .args(&[
-            fixtures::HTTP_ADDR,
-            "-o",
-            "w5",
-            "-a",
-            "username password",
-            "-j",
-            "16",
-        ])
+        .args(&[&url, "-o", output_dir, "-a", "username password"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
@@ -70,11 +57,8 @@ fn auth_valid() {
 
     let status = cmd.wait().unwrap();
     assert!(status.success());
+
     let paths = read_dir(format!("{}/{}", output_dir, IP)).unwrap();
     // Should load multiple paths, not just the invalid auth response
-    let paths_count = paths.count();
-    println!("Paths.count() = {}", paths_count);
-    assert!(paths_count > 1);
-
-    std::fs::remove_dir_all(output_dir).unwrap();
+    assert!(paths.count() > 1);
 }

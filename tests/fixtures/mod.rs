@@ -1,11 +1,10 @@
 use std::fs::File;
 use std::thread;
 
+use portpicker;
 use subprocess::Exec;
 use tiny_http::{Header, Response, Server};
 
-pub const HTTP_ADDR: &'static str = "http://0.0.0.0:8000";
-const ADDR: &'static str = "0.0.0.0:8000";
 const AUTH_HEADER: &str = "Authorization";
 const AUTH_CREDENTIALS: &str = "Basic dXNlcm5hbWU6cGFzc3dvcmQ="; // base64-encoded "username:password"
 
@@ -13,9 +12,10 @@ pub fn spawn_local_http_server(
     page: &'static str,
     requires_auth: bool,
     headers: Option<&'static Vec<(&'static str, &'static str)>>,
-) {
-    let server = Server::http(ADDR).unwrap();
-    println!("Spawning http server");
+) -> String {
+    let port = portpicker::pick_unused_port().unwrap();
+    let addr = format!("0.0.0.0:{}", port);
+    let server = Server::http(&addr).unwrap();
     thread::spawn(move || {
         for request in server.incoming_requests() {
             // Authenticate request from headers if provided
@@ -35,6 +35,7 @@ pub fn spawn_local_http_server(
                     "/" => format!("{}{}", page, "index.html"),
                     other => format!("{}{}", page, other),
                 };
+                // panic!("File = {}", file);
                 Response::from_file(File::open(file).unwrap()).boxed()
             };
 
@@ -56,6 +57,8 @@ pub fn spawn_local_http_server(
             request.respond(response).unwrap();
         }
     });
+
+    return addr;
 }
 
 fn check_auth_credentials(auth_header: Option<&Header>) -> bool {
