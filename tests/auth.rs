@@ -7,7 +7,7 @@ use std::process::Command;
 use std::process::Stdio;
 use std::sync::Once;
 
-const PAGE: &'static str = "tests/fixtures/index.html";
+const PAGE: &'static str = "tests/fixtures/";
 const IP: &'static str = "0.0.0.0";
 static START: Once = Once::new();
 

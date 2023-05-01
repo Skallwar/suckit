@@ -8,7 +8,7 @@ use std::process::Command;
 use std::process::Stdio;
 use std::sync::Once;
 
-const PAGE: &'static str = "tests/fixtures/index.html";
+const PAGE: &'static str = "tests/fixtures/";
 const IP: &'static str = "0.0.0.0";
 static START: Once = Once::new();
 
@@ -38,8 +38,6 @@ fn with_external() {
             "0",
             "--ext-depth",
             "1",
-            "-j",
-            "16",
         ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -68,8 +66,6 @@ fn without_external() {
             "0",
             "--ext-depth",
             "0",
-            "-j",
-            "16",
         ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
