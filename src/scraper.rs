@@ -59,6 +59,7 @@ impl Scraper {
             downloader: downloader::Downloader::new(
                 args.tries,
                 &args.user_agent,
+                &args.cookie,
                 args.disable_certs_checks,
                 &args.auth,
                 &args.origin,
