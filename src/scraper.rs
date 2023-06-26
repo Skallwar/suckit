@@ -59,6 +59,7 @@ impl Scraper {
             downloader: downloader::Downloader::new(
                 args.tries,
                 &args.user_agent,
+                &args.cookie,
                 args.disable_certs_checks,
                 &args.auth,
                 &args.origin,
@@ -429,6 +430,7 @@ mod tests {
             continue_on_error: true,
             dry_run: false,
             disable_certs_checks: false,
+            cookie: "".to_string(),
         };
 
         let _ = Scraper::new(args);
@@ -456,6 +458,7 @@ mod tests {
             continue_on_error: true,
             dry_run: false,
             disable_certs_checks: false,
+            cookie: "".to_string(),
         };
 
         let _ = Scraper::new(args);

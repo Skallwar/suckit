@@ -86,6 +86,14 @@ pub struct Args {
     )]
     pub user_agent: String,
 
+    /// Cookie header
+    #[structopt(
+        long,
+        default_value = "",
+        help = "Cookie to send with each request, format: key1=value1;key2=value2"
+    )]
+    pub cookie: String,
+
     /// Regex filter to limit visiting pages to only matched ones
     #[structopt(
     long,

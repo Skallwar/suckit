@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use lazy_static::lazy_static;
 use regex::Regex;
+use reqwest::header::{HeaderMap, HeaderValue, COOKIE};
 use url::Url;
 
 use crate::warn;
@@ -55,6 +56,7 @@ impl Downloader {
     pub fn new(
         tries: usize,
         user_agent: &str,
+        cookie: &str,
         disable_certs_checks: bool,
         auth: &[String],
         origin: &Url,
@@ -68,8 +70,12 @@ impl Downloader {
             auth_map.insert(host, (username, password));
         }
 
+        let mut headers = HeaderMap::new();
+        headers.insert(COOKIE, HeaderValue::from_str(cookie).unwrap());
+
         Downloader {
             client: reqwest::blocking::ClientBuilder::new()
+                .default_headers(headers)
                 .danger_accept_invalid_certs(disable_certs_checks)
                 .cookie_store(true)
                 .user_agent(user_agent)
@@ -185,7 +191,7 @@ mod tests {
     #[test]
     fn test_download_url() {
         let url: Url = Url::parse("https://lwn.net").unwrap();
-        match Downloader::new(1, "suckit", false, &[], &url).get(&url) {
+        match Downloader::new(1, "suckit", "", false, &[], &url).get(&url) {
             Err(e) => assert!(false, "Fail to download lwn.net: {:?}", e),
             _ => {}
         }
