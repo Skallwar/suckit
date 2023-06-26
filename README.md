@@ -30,6 +30,7 @@ USAGE:
 
 FLAGS:
     -c, --continue-on-error                  Flag to enable or disable exit on error
+        --disable-certs-checks               Dissable SSL certificates verification
         --dry-run                            Do everything without saving the files to the disk
     -h, --help                               Prints help information
     -V, --version                            Prints version information
@@ -40,6 +41,9 @@ OPTIONS:
     -a, --auth <auth>...
             HTTP basic authentication credentials space-separated as "username password host". Can be repeated for
             multiple credentials as "u1 p1 h1 u2 p2 h2"
+        --cookie <cookie>
+            Cookie to send with each request, format: key1=value1;key2=value2 [default: ]
+
         --delay <delay>
             Add a delay in seconds between downloads to reduce the likelihood of getting banned [default: 0]
 
