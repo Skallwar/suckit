@@ -20,7 +20,7 @@ include = [
 ]
 
 [package.metadata]
-msrv = "1.49.0"
+msrv = "1.67.0"
 
 [lib]
 name = "suckit"

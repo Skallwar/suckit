@@ -98,12 +98,23 @@ jobs:
         sudo apt update
         sudo apt install libssl-dev
 
+    # - name: Install libssl (cross)
+    #   uses: ryankurte/action-apt@v0.3.0
+    #   if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' }}
+    #   with:
+    #     arch: ${{ env.MULTILIB_ARCH }}
+    #     packages: "${{ env.UBUNTU_CROSS_PKG_LIST }} libssl-dev:${{ env.MULTILIB_ARCH }}"
+
     - name: Install libssl (cross)
-      uses: ryankurte/action-apt@v0.3.0
       if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' }}
-      with:
-        arch: ${{ env.MULTILIB_ARCH }}
-        packages: "${{ env.UBUNTU_CROSS_PKG_LIST }} libssl-dev:${{ env.MULTILIB_ARCH }}"
+      run: |
+        sudo dpkg --add-architecture ${{ env.MULTILIB_ARCH }}
+        sudo sed -i'' -E 's/^(deb|deb-src) /\1 [arch=amd64,i386] /' /etc/apt/sources.list
+        echo "deb [arch=${{ env.MULTILIB_ARCH }}] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe" | sudo tee /etc/apt/sources.list.d/${{ env.MULTILIB_ARCH }}.list
+        echo "deb [arch=${{ env.MULTILIB_ARCH }}] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-updates main restricted universe" | sudo tee -a /etc/apt/sources.list.d/${{ env.MULTILIB_ARCH }}.list
+        echo "deb [arch=${{ env.MULTILIB_ARCH }}] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-security main restricted universe" | sudo tee -a /etc/apt/sources.list.d/${{ env.MULTILIB_ARCH }}.list
+        sudo apt update
+        sudo apt install ${{ env.UBUNTU_CROSS_PKG_LIST }} libssl-dev:${{ env.MULTILIB_ARCH }}
 
           #- name: Setup tmate session
           #uses: mxschmitt/action-tmate@v3
