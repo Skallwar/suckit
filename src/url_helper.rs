@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use md5;
+use std::borrow::Cow;
 use url::Url;
 
 ///Max file name size supported by the file system
@@ -24,6 +25,19 @@ pub fn to_path(url: &Url, with_fragment: bool) -> String {
         .parent()
         .map_or("", |filename| filename.to_str().unwrap())
         .to_string();
+
+    // Ensure the folder names are not too long
+    parent = parent
+        .split('/')
+        .map(|str| {
+            if str.len() > FILE_NAME_MAX_LENGTH {
+                Cow::Owned(format!("{:x}", md5::compute(str)))
+            } else {
+                Cow::Borrowed(str)
+            }
+        })
+        .collect::<Vec<Cow<str>>>()
+        .join("/");
 
     if url_path_and_query.ends_with('/') {
         filename = "index.html".to_string();
