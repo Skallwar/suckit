@@ -192,7 +192,10 @@ impl Scraper {
 
                 let next_full_url = match url.join(url_to_parse.as_str()) {
                     Ok(url) => url,
-                    Err(e) => panic!("Failed to parse url: {} | Error: {}", next_url, e),
+                    Err(e) => {
+                        warn!("Failed to parse url: {} | Error: {}", next_url, e);
+                        return;
+                    },
                 };
 
                 let path = url_helper::to_path(&next_full_url, true);
